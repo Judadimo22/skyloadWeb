@@ -1,14 +1,19 @@
-import React from "react";
+
 import "./index.css";
-import { HomePage } from "./Pages/HomePage";
 import { Route, Routes } from "react-router";
+import { LoginPage } from "./Pages/LoginPage";
+import { HomePage } from "./Pages/HomePage";
+import { RegisterUserPage } from "./Pages/RegisterUserPage";
+
 
 
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/home" element={<HomePage />} />
+      <Route path="/registerUser" element={<RegisterUserPage/>} />
     </Routes>
   );
 }
