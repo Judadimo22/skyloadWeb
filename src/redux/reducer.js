@@ -1,16 +1,18 @@
-
-
-
+import { GET_USERS } from "./actions/adminActions";
 
   const initialState = {
-
+    users:[]
   };
   
   function rootReducer(state = initialState, action) {
     switch (action.type) {
-        default: {
-            return state;
-        }
+      case GET_USERS: return {
+        ...state,
+        users: action.payload,
+      }
+      default: {
+        return state;
+      }
     }
   }
   

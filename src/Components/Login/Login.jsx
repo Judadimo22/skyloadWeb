@@ -38,12 +38,10 @@ export default function Login() {
       const result = await dispatch(
         loginAdmin(form.email, form.password)
       );
-
-      console.log(result)
-
+      
       if (result.status) {
         navigate("/home");
-        }
+      }
 
     } catch (err) {
 

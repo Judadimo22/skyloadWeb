@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { registerUser } from "../../redux/actions/usersActions";
+import { useDispatch } from "react-redux";
+import Swal from "sweetalert2";
 
 export const RegisterUser = () => {
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [form, setForm] = useState({
     name: "",
@@ -35,11 +39,23 @@ export const RegisterUser = () => {
 
       console.log("Usuario a registrar:", form);
 
-      // Aquí luego irá la acción redux o llamada al backend
+      const result = await dispatch(
+        registerUser(form.email, form.password, form.name, form.lastName)
+      );
 
-      setTimeout(() => {
+      if (result.status) {
+
+        await Swal.fire({
+          icon: "success",
+          title: "Usuario creado",
+          text: "El usuario fue creado correctamente",
+          confirmButtonText: "Aceptar"
+        });
+
         navigate("/home");
-      }, 800);
+      }
+
+      setLoading(false);
 
     } catch (error) {
 

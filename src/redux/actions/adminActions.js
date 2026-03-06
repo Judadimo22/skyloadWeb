@@ -1,6 +1,7 @@
-// loginAdmin.js
-import { jwtDecode } from 'jwt-decode'; // ← Agregar
-import { post } from "../../utils/funciones";
+
+import { jwtDecode } from 'jwt-decode'; 
+import { post, get } from "../../utils/funciones";
+export const GET_USERS = 'GET_USERS';
 
 export function loginAdmin(email, password) {
   return async function (dispatch) {
@@ -15,4 +16,14 @@ export function loginAdmin(email, password) {
 
     return response.data;
   };
+}
+
+export function getUsers() {
+  return async function (dispatch) {
+    let json = await get('/users')
+    dispatch({
+      type: GET_USERS,
+      payload: json.data
+    })
+  }
 }

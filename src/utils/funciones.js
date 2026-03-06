@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Swal from 'sweetalert2';
 
-const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
+export const backendBaseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
 
 
 // -----------------------------
