@@ -1,7 +1,8 @@
-import { GET_USERS } from "./actions/adminActions";
+import { GET_LOADS, GET_USERS } from "./actions/adminActions";
 
   const initialState = {
-    users:[]
+    users:[],
+    loads: []
   };
   
   function rootReducer(state = initialState, action) {
@@ -9,6 +10,10 @@ import { GET_USERS } from "./actions/adminActions";
       case GET_USERS: return {
         ...state,
         users: action.payload,
+      }
+      case GET_LOADS : return {
+        ...state,
+        loads: action.payload
       }
       default: {
         return state;

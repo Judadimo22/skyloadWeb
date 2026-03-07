@@ -45,7 +45,7 @@ export default function Login() {
 
     } catch (err) {
 
-      setError("Correo o contraseña incorrectos");
+      setError("Email o contraseña incorrectos");
 
     } finally {
 
@@ -65,7 +65,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5">
 
           <div>
-            <label className="text-sm text-gray-600">Correo electrónico</label>
+            <label className="text-sm text-gray-600">Email electrónico</label>
             <input
               type="email"
               name="email"

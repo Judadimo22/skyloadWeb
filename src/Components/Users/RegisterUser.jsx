@@ -19,25 +19,33 @@ export const RegisterUser = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
+
     setForm({
       ...form,
       [e.target.name]: e.target.value
     });
+
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
 
     if (!form.name || !form.lastName || !form.email || !form.password) {
-      alert("Todos los campos son obligatorios");
+
+      Swal.fire({
+        icon: "warning",
+        title: "Missing fields",
+        text: "All fields are required"
+      });
+
       return;
+
     }
 
     try {
 
       setLoading(true);
-
-      console.log("Usuario a registrar:", form);
 
       const result = await dispatch(
         registerUser(form.email, form.password, form.name, form.lastName)
@@ -47,41 +55,51 @@ export const RegisterUser = () => {
 
         await Swal.fire({
           icon: "success",
-          title: "Usuario creado",
-          text: "El usuario fue creado correctamente",
-          confirmButtonText: "Aceptar"
+          title: "User created",
+          text: "The user was created successfully",
+          confirmButtonText: "OK"
         });
 
         navigate("/home");
-      }
 
-      setLoading(false);
+      }
 
     } catch (error) {
 
       console.error(error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while creating the user"
+      });
 
     } finally {
 
       setLoading(false);
 
     }
+
   };
 
   return (
+
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
 
       <div className="bg-white shadow-lg rounded-xl w-full max-w-lg p-8">
 
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-          Registrar Usuario
+          Register User
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-5">
 
-          {/* Nombre */}
+          {/* FIRST NAME */}
           <div>
-            <label className="text-sm text-gray-600">Nombre</label>
+            <label className="text-sm text-gray-600">
+              First Name
+            </label>
+
             <input
               type="text"
               name="name"
@@ -91,9 +109,12 @@ export const RegisterUser = () => {
             />
           </div>
 
-          {/* Apellido */}
+          {/* LAST NAME */}
           <div>
-            <label className="text-sm text-gray-600">Apellido</label>
+            <label className="text-sm text-gray-600">
+              Last Name
+            </label>
+
             <input
               type="text"
               name="lastName"
@@ -103,9 +124,12 @@ export const RegisterUser = () => {
             />
           </div>
 
-          {/* Correo */}
+          {/* EMAIL */}
           <div>
-            <label className="text-sm text-gray-600">Correo</label>
+            <label className="text-sm text-gray-600">
+              Email
+            </label>
+
             <input
               type="email"
               name="email"
@@ -115,9 +139,12 @@ export const RegisterUser = () => {
             />
           </div>
 
-          {/* Contraseña */}
+          {/* PASSWORD */}
           <div>
-            <label className="text-sm text-gray-600">Contraseña</label>
+            <label className="text-sm text-gray-600">
+              Password
+            </label>
+
             <input
               type="password"
               name="password"
@@ -127,7 +154,7 @@ export const RegisterUser = () => {
             />
           </div>
 
-          {/* Botones */}
+          {/* ACTION BUTTONS */}
           <div className="flex justify-end gap-3 pt-4">
 
             <button
@@ -135,7 +162,7 @@ export const RegisterUser = () => {
               onClick={() => navigate("/home")}
               className="px-4 py-2 border rounded-lg hover:bg-gray-100"
             >
-              Cancelar
+              Cancel
             </button>
 
             <button
@@ -143,7 +170,7 @@ export const RegisterUser = () => {
               disabled={loading}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
-              {loading ? "Registrando..." : "Registrar"}
+              {loading ? "Registering..." : "Register"}
             </button>
 
           </div>
@@ -153,5 +180,7 @@ export const RegisterUser = () => {
       </div>
 
     </div>
+
   );
-}
+
+};

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { UserPlus } from "lucide-react";
 import { Link } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -6,33 +6,36 @@ import { getUsers } from "../../redux/actions/adminActions";
 import Swal from "sweetalert2";
 import { backendBaseUrl } from "../../utils/funciones";
 
-export const UsersList =() =>  {
-  const users= useSelector((state) => state.users);
+export const UsersList = () => {
+
+  const users = useSelector((state) => state.users);
   const dispatch = useDispatch();
 
   useEffect(() => {
+
     const fetchData = async () => {
       try {
         await dispatch(getUsers());
       } catch (error) {
-        console.log('Error al obtener los productos:', error);
+        console.log("Error fetching users:", error);
       }
     };
+
     fetchData();
+
   }, [dispatch]);
 
-  const handleNuevoUsuario = () => {
-    console.log("Registrar nuevo usuario");
-  };
+  const handleAssignLoad = async (user) => {
 
-  const handleAsignarCarga = async (usuario) => {
     const { value: formValues } = await Swal.fire({
-      title: `<span style="font-size:22px;font-weight:600">Asignar carga</span>`,
+
+      title: `<span style="font-size:22px;font-weight:600">Assign Load</span>`,
       width: 700,
       showCancelButton: true,
-      confirmButtonText: "Crear carga",
-      cancelButtonText: "Cancelar",
+      confirmButtonText: "Create Load",
+      cancelButtonText: "Cancel",
       confirmButtonColor: "#2563eb",
+
       customClass: {
         popup: "rounded-xl",
         confirmButton: "px-6 py-2 rounded-lg",
@@ -43,55 +46,56 @@ export const UsersList =() =>  {
       <div class="load-modal">
 
         <div class="user-row">
-          <span class="user-label">Usuario:</span>
-          <span class="user-name">${usuario.name} ${usuario.lastName}</span>
+          <span class="user-label">User:</span>
+          <span class="user-name">${user.name} ${user.lastName}</span>
         </div>
 
         <div class="form-grid">
 
           <div class="form-group">
-            <label>Fecha recogida</label>
+            <label>Pickup Date</label>
             <input id="datePickUp" type="date">
           </div>
 
           <div class="form-group">
-            <label>Empresa recogida</label>
-            <input id="companyNamePickUp" placeholder="Empresa">
+            <label>Pickup Company</label>
+            <input id="companyNamePickUp" placeholder="Company name">
           </div>
 
           <div class="form-group">
-            <label>Dirección recogida</label>
-            <input id="addressPickup" placeholder="Dirección">
+            <label>Pickup Address</label>
+            <input id="addressPickup" placeholder="Address">
           </div>
 
           <div class="form-group">
-            <label>Ciudad recogida</label>
-            <input id="cityPickUp" placeholder="Ciudad">
+            <label>Pickup City</label>
+            <input id="cityPickUp" placeholder="City">
           </div>
 
           <div class="form-group">
-            <label>Fecha entrega</label>
+            <label>Delivery Date</label>
             <input id="dateDelivery" type="date">
           </div>
 
           <div class="form-group">
-            <label>Empresa entrega</label>
-            <input id="companyDelivery" placeholder="Empresa">
+            <label>Delivery Company</label>
+            <input id="companyDelivery" placeholder="Company name">
           </div>
 
           <div class="form-group">
-            <label>Dirección entrega</label>
-            <input id="addressDelivery" placeholder="Dirección">
+            <label>Delivery Address</label>
+            <input id="addressDelivery" placeholder="Address">
           </div>
 
           <div class="form-group">
-            <label>Ciudad entrega</label>
-            <input id="cityDelivery" placeholder="Ciudad">
+            <label>Delivery City</label>
+            <input id="cityDelivery" placeholder="City">
           </div>
 
         </div>
       </div>
       `,
+
       focusConfirm: false,
 
       preConfirm: () => {
@@ -116,7 +120,7 @@ export const UsersList =() =>  {
           !addressDelivery ||
           !cityDelivery
         ) {
-          Swal.showValidationMessage("Todos los campos son obligatorios");
+          Swal.showValidationMessage("All fields are required");
           return false;
         }
 
@@ -129,99 +133,105 @@ export const UsersList =() =>  {
           companyDelivery,
           addressDelivery,
           cityDelivery,
-          user: usuario._id
+          user: user._id
         };
       }
+
     });
 
     if (!formValues) return;
 
-try {
+    try {
 
-  // ALERTA DE CARGANDO
-  Swal.fire({
-    title: "Creando carga...",
-    text: "Por favor espere",
-    allowOutsideClick: false,
-    allowEscapeKey: false,
-    didOpen: () => {
-      Swal.showLoading();
+      Swal.fire({
+        title: "Creating load...",
+        text: "Please wait",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const response = await fetch(`${backendBaseUrl}/asignLoad`, {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(formValues)
+
+      });
+
+      const data = await response.json();
+
+      Swal.close();
+
+      if (response.ok) {
+
+        Swal.fire({
+          icon: "success",
+          title: "Load created",
+          text: "The load was assigned successfully",
+          confirmButtonColor: "#2563eb"
+        }).then(() => {
+
+          window.location.reload();
+
+        });
+
+      } else {
+
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.message || "The load could not be created"
+        });
+
+      }
+
+    } catch (error) {
+
+      Swal.close();
+
+      Swal.fire({
+        icon: "error",
+        title: "Server error",
+        text: "Please try again"
+      });
+
     }
-  });
 
-  const response = await fetch(`${backendBaseUrl}/asignLoad`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(formValues)
-  });
-
-  const data = await response.json();
-
-  Swal.close(); // cerrar loading
-
-  if (response.ok) {
-
-    Swal.fire({
-      icon: "success",
-      title: "Carga creada",
-      text: "La carga fue asignada correctamente",
-      confirmButtonColor: "#2563eb"
-    }).then(() => {
-
-      // RECARGAR PÁGINA
-      window.location.reload();
-
-    });
-
-  } else {
-
-    Swal.fire({
-      icon: "error",
-      title: "Error",
-      text: data.message || "No se pudo crear la carga"
-    });
-
-  }
-
-} catch (error) {
-
-  Swal.close();
-
-  Swal.fire({
-    icon: "error",
-    title: "Error del servidor",
-    text: "Intenta nuevamente"
-  });
-
-}
   };
 
-
-
   return (
+
     <div className="space-y-6">
+
       {/* HEADER */}
       <div className="flex justify-between items-center">
 
         <h2 className="text-xl font-semibold text-gray-800">
-          Usuarios
+          Users
         </h2>
 
-        <Link to='/registerUser'>
-        <button
-          onClick={handleNuevoUsuario}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          <UserPlus size={18} />
-          Registrar usuario
-        </button>
+        <Link to="/registerUser">
+
+          <button
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            <UserPlus size={18} />
+            Register User
+          </button>
+
         </Link>
 
       </div>
 
-      {/* TABLA */}
+
+      {/* USERS TABLE */}
       <div className="bg-white shadow rounded-xl overflow-hidden">
 
         <table className="min-w-full">
@@ -230,9 +240,9 @@ try {
 
             <tr className="text-left text-sm text-gray-600">
 
-              <th className="px-6 py-3">Nombres</th>
-              <th className="px-6 py-3">Apellidos</th>
-              <th className="px-6 py-3">Correo</th>
+              <th className="px-6 py-3">First Name</th>
+              <th className="px-6 py-3">Last Name</th>
+              <th className="px-6 py-3">Email</th>
               <th className="px-6 py-3"></th>
 
             </tr>
@@ -241,35 +251,36 @@ try {
 
           <tbody>
 
-            {users.map((usuario) => (
+            {users.map((user) => (
 
               <tr
-                key={usuario.id}
+                key={user.id}
                 className="border-b hover:bg-gray-50 transition"
               >
 
                 <td className="px-6 py-4 text-gray-800">
-                  {usuario.name}
+                  {user.name}
                 </td>
 
                 <td className="px-6 py-4 text-gray-600">
-                  {usuario.lastName}
+                  {user.lastName}
                 </td>
 
                 <td className="px-6 py-4">
 
                   <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-                    {usuario.email}
+                    {user.email}
                   </span>
 
                 </td>
+
                 <td className="px-6 py-4">
 
                   <button
-                    onClick={() => handleAsignarCarga(usuario)}
+                    onClick={() => handleAssignLoad(user)}
                     className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition"
                   >
-                    Asignar carga
+                    Assign Load
                   </button>
 
                 </td>
@@ -285,5 +296,7 @@ try {
       </div>
 
     </div>
+
   );
-}
+
+};

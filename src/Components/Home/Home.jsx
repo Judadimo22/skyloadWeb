@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LogOut, Truck, Users, } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UsersList } from "../Users/Users";
+import { Loads } from "../Loads/Loads";
 
 
 export const  Home = () => {
@@ -37,7 +38,7 @@ export const  Home = () => {
                 : "hover:bg-gray-100 text-gray-700"}`}
           >
             <Truck size={18} />
-            Administrar Cargas
+Manage loads
           </button>
 
           <button
@@ -48,7 +49,7 @@ export const  Home = () => {
                 : "hover:bg-gray-100 text-gray-700"}`}
           >
             <Users size={18} />
-            Administrar Usuarios
+            Manage Users
           </button>
 
         </nav>
@@ -59,7 +60,7 @@ export const  Home = () => {
             className="flex items-center gap-2 text-red-500 hover:text-red-600"
           >
             <LogOut size={18} />
-            Cerrar sesión
+            Logout
           </button>
         </div>
 
@@ -71,8 +72,8 @@ export const  Home = () => {
         <header className="mb-8">
           <h2 className="text-2xl font-semibold text-gray-800">
             {section === "cargas"
-              ? "Administrar Cargas"
-              : "Administrar Usuarios"}
+              ? "Manage loads"
+              : "Manage Users"}
           </h2>
         </header>
 
@@ -80,7 +81,7 @@ export const  Home = () => {
 
           {section === "cargas" && (
             <p className="text-gray-600">
-              Aquí podrás gestionar todas las cargas del sistema.
+              <Loads/>
             </p>
           )}
 
