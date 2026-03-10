@@ -8,12 +8,14 @@ export const RegisterUser = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     lastName: "",
     email: "",
-    password: ""
+    password: "",
+    vehicle: ""
   });
 
   const [loading, setLoading] = useState(false);
@@ -48,10 +50,12 @@ export const RegisterUser = () => {
       setLoading(true);
 
       const result = await dispatch(
-        registerUser(form.email, form.password, form.name, form.lastName)
+        registerUser(form.email, form.password, form.name, form.lastName, form.vehicle)
       );
 
-      if (result.status) {
+      console.log(result)
+
+      if (result.token) {
 
         await Swal.fire({
           icon: "success",
@@ -124,6 +128,20 @@ export const RegisterUser = () => {
             />
           </div>
 
+          <div>
+            <label className="text-sm text-gray-600">
+              Vehicle
+            </label>
+
+            <input
+              type="text"
+              name="vehicle"
+              value={form.vehicle}
+              onChange={handleChange}
+              className="w-full mt-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+
           {/* EMAIL */}
           <div>
             <label className="text-sm text-gray-600">
@@ -145,13 +163,26 @@ export const RegisterUser = () => {
               Password
             </label>
 
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              className="w-full mt-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+            <div className="relative mt-1">
+
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-2 pr-16 focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2 text-sm text-blue-600 hover:text-blue-800"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+
+            </div>
+
           </div>
 
           {/* ACTION BUTTONS */}

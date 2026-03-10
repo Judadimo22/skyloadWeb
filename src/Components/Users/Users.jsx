@@ -28,73 +28,98 @@ export const UsersList = () => {
   const handleAssignLoad = async (user) => {
 
     const { value: formValues } = await Swal.fire({
+        title: `<span style="font-size:22px;font-weight:600">Assign Load</span>`,
+        width: 700,
+        showCancelButton: true,
+        confirmButtonText: "Create Load",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: "#2563eb",
 
-      title: `<span style="font-size:22px;font-weight:600">Assign Load</span>`,
-      width: 700,
-      showCancelButton: true,
-      confirmButtonText: "Create Load",
-      cancelButtonText: "Cancel",
-      confirmButtonColor: "#2563eb",
+        didOpen: () => {
 
-      customClass: {
-        popup: "rounded-xl",
-        confirmButton: "px-6 py-2 rounded-lg",
-        cancelButton: "px-6 py-2 rounded-lg"
-      },
+          const rateInput = document.getElementById("rate");
 
-      html: `
-      <div class="load-modal">
+          rateInput.addEventListener("input", (e) => {
 
-        <div class="user-row">
-          <span class="user-label">User:</span>
-          <span class="user-name">${user.name} ${user.lastName}</span>
+            let value = e.target.value.replace(/\D/g, "");
+
+            if (!value) {
+              e.target.value = "";
+              return;
+            }
+
+            value = Number(value).toLocaleString("en-US");
+
+            e.target.value = `$${value}`;
+
+          });
+
+        },
+
+        customClass: {
+          popup: "rounded-xl",
+          confirmButton: "px-6 py-2 rounded-lg",
+          cancelButton: "px-6 py-2 rounded-lg"
+        },
+
+        html: `
+        <div class="load-modal">
+
+          <div class="user-row">
+            <span class="user-label">User:</span>
+            <span class="user-name">${user.name} ${user.lastName}</span>
+          </div>
+
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label>Pickup Date</label>
+              <input id="datePickUp" type="date">
+            </div>
+
+            <div class="form-group">
+              <label>Pickup Company</label>
+              <input id="companyNamePickUp" placeholder="Company name">
+            </div>
+
+            <div class="form-group">
+              <label>Pickup Address</label>
+              <input id="addressPickup" placeholder="Address">
+            </div>
+
+            <div class="form-group">
+              <label>Pickup City</label>
+              <input id="cityPickUp" placeholder="City">
+            </div>
+
+            <div class="form-group">
+              <label>Delivery Date</label>
+              <input id="dateDelivery" type="date">
+            </div>
+
+            <div class="form-group">
+              <label>Delivery Company</label>
+              <input id="companyDelivery" placeholder="Company name">
+            </div>
+
+            <div class="form-group">
+              <label>Delivery Address</label>
+              <input id="addressDelivery" placeholder="Address">
+            </div>
+
+            <div class="form-group">
+              <label>Rate Price</label>
+              <input id="rate" placeholder="$0">
+            </div>
+
+            <div class="form-group">
+              <label>Delivery City</label>
+              <input id="cityDelivery" placeholder="City">
+            </div>
+
+          </div>
         </div>
-
-        <div class="form-grid">
-
-          <div class="form-group">
-            <label>Pickup Date</label>
-            <input id="datePickUp" type="date">
-          </div>
-
-          <div class="form-group">
-            <label>Pickup Company</label>
-            <input id="companyNamePickUp" placeholder="Company name">
-          </div>
-
-          <div class="form-group">
-            <label>Pickup Address</label>
-            <input id="addressPickup" placeholder="Address">
-          </div>
-
-          <div class="form-group">
-            <label>Pickup City</label>
-            <input id="cityPickUp" placeholder="City">
-          </div>
-
-          <div class="form-group">
-            <label>Delivery Date</label>
-            <input id="dateDelivery" type="date">
-          </div>
-
-          <div class="form-group">
-            <label>Delivery Company</label>
-            <input id="companyDelivery" placeholder="Company name">
-          </div>
-
-          <div class="form-group">
-            <label>Delivery Address</label>
-            <input id="addressDelivery" placeholder="Address">
-          </div>
-
-          <div class="form-group">
-            <label>Delivery City</label>
-            <input id="cityDelivery" placeholder="City">
-          </div>
-
-        </div>
-      </div>
-      `,
+        `,
 
       focusConfirm: false,
 
@@ -109,6 +134,7 @@ export const UsersList = () => {
         const companyDelivery = document.getElementById("companyDelivery").value;
         const addressDelivery = document.getElementById("addressDelivery").value;
         const cityDelivery = document.getElementById("cityDelivery").value;
+        const rate = document.getElementById("rate").value.replace(/\D/g, "");
 
         if (
           !datePickUp ||
@@ -118,7 +144,7 @@ export const UsersList = () => {
           !dateDelivery ||
           !companyDelivery ||
           !addressDelivery ||
-          !cityDelivery
+          !cityDelivery || !rate
         ) {
           Swal.showValidationMessage("All fields are required");
           return false;
@@ -133,7 +159,8 @@ export const UsersList = () => {
           companyDelivery,
           addressDelivery,
           cityDelivery,
-          user: user._id
+          user: user._id,
+          rate: rate
         };
       }
 
