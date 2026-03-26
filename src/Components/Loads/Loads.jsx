@@ -91,10 +91,22 @@ export const Loads = () => {
     mapRef.current = map;
   };
 
+  // Fit all when no selection
   useEffect(() => {
     if (!mapRef.current || selectedId || loadsWithLocation.length === 0) return;
     fitAll(mapRef.current, loadsWithLocation);
   }, [loads, filter, selectedId]);
+
+  // Follow selected driver in real-time
+  useEffect(() => {
+    if (!mapRef.current || !selectedId) return;
+    const load = loads.find(l => l._id === selectedId);
+    if (!load?.user?.lat) return;
+    mapRef.current.panTo({
+      lat: Number(load.user.lat),
+      lng: Number(load.user.lon),
+    });
+  }, [loads]);
 
   const handleSelectLoad = (load) => {
     if (selectedId === load._id) {

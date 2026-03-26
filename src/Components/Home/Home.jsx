@@ -68,7 +68,7 @@ export const Home = () => {
         <div className="px-3 py-4 border-t border-slate-700">
           <button
             onClick={logout}
-            className="cursor-pointer flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-red-400 transition-all"
+            className="cursor-pointer flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-all"
           >
             <LogOut size={16} />
             Logout
@@ -93,7 +93,7 @@ export const Home = () => {
             <p className="text-sm text-gray-500 mt-0.5">View and manage your drivers</p>
           </header>
 
-          <div className="bg-white rounded-xl shadow-sm border">
+          <div className="bg-white rounded-xl shadow-sm">
             <UsersList />
           </div>
 

@@ -68,7 +68,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {error && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm text-center rounded-lg px-4 py-2">
               {error}
             </div>
           )}
