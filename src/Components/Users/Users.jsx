@@ -238,7 +238,7 @@ export const UsersList = () => {
     <div className="space-y-6">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center px-5 pt-5">
 
         <h2 className="text-xl font-semibold text-gray-800">
           Users
@@ -247,7 +247,7 @@ export const UsersList = () => {
         <Link to="/registerUser">
 
           <button
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transitio cursor-pointer"
           >
             <UserPlus size={18} />
             Register User
@@ -305,7 +305,7 @@ export const UsersList = () => {
 
                   <button
                     onClick={() => handleAssignLoad(user)}
-                    className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition"
+                    className="bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition cursor-pointer"
                   >
                     Assign Load
                   </button>
