@@ -285,7 +285,7 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="flex flex-col">
+        <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col">
           <div className="px-6 py-5 space-y-4">
 
             {/* Name row */}
@@ -320,7 +320,7 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
               <label className={labelClass}>Email</label>
               <div className="relative">
                 <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="driver@email.com" className={inputClass} />
+                <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="driver@email.com" autoComplete="off" className={inputClass} />
               </div>
             </div>
 
@@ -337,6 +337,7 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
                   value={form.password}
                   onChange={handleChange}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className="w-full pl-9 pr-12 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
                 <button
@@ -396,7 +397,7 @@ export const UsersList = () => {
 
   return (
 
-    <div className="space-y-6 border-2 shadow-md border-[#0066f9] rounded-lg">
+    <div className="space-y-6 border border-gray-600 shadow-md rounded-lg">
 
       {assignUser && (
         <AssignLoadModal
