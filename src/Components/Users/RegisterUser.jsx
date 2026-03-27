@@ -13,7 +13,7 @@ export const RegisterUser = () => {
   const [loading, setLoading]           = useState(false);
 
   const [form, setForm] = useState({
-    name: "", lastName: "", email: "", password: "", vehicle: ""
+    name: "", lastName: "", email: "", password: "", vehicle: "", vehicleDimensions: ""
   });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -21,14 +21,14 @@ export const RegisterUser = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.lastName || !form.email || !form.password) {
+    if (!form.name || !form.lastName || !form.email || !form.password || !form.vehicleDimensions) {
       Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
       return;
     }
 
     try {
       setLoading(true);
-      const result = await dispatch(registerUser(form.email, form.password, form.name, form.lastName, form.vehicle));
+      const result = await dispatch(registerUser(form.email, form.password, form.name, form.lastName, form.vehicle, form.vehicleDimensions));
 
       if (result.token) {
         await Swal.fire({ icon: "success", title: "Driver registered", text: "The driver was added to your fleet", confirmButtonColor: "#2563eb" });
@@ -89,6 +89,14 @@ export const RegisterUser = () => {
               <div className="relative">
                 <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input type="text" name="vehicle" value={form.vehicle} onChange={handleChange} placeholder="e.g. Unit 5607" className={inputClass} />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Vehicle Dimensions</label>
+              <div className="relative">
+                <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="text" name="vehicle" value={form.vehicleDimensions} onChange={handleChange} placeholder="e.g. Unit 5607" className={inputClass} />
               </div>
             </div>
 

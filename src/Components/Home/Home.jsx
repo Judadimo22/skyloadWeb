@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogOut, Map, Users } from "lucide-react";
+import { LogOut, Map, Users, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UsersList } from "../Users/Users";
 import { Loads } from "../Loads/Loads";
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
 export const Home = () => {
 
   const [section, setSection] = useState("cargas");
+  const [unitFilter, setUnitFilter] = useState("");
   const navigate = useNavigate();
 
   const logout = () => {
@@ -101,7 +102,22 @@ export const Home = () => {
 
           <div className="p-8">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <UsersList />
+
+              {/* Search bar */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <div className="relative max-w-xs">
+                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Search by unit number..."
+                    value={unitFilter}
+                    onChange={(e) => setUnitFilter(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <UsersList unitFilter={unitFilter} />
             </div>
           </div>
 

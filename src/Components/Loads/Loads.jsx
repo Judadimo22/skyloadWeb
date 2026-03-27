@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { backendBaseUrl } from "../../utils/funciones";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
+import Swal from "sweetalert2";
+import { X } from "lucide-react";
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.35 };
 const DEFAULT_ZOOM = 4;
@@ -42,7 +44,9 @@ export const Loads = () => {
   const [loads, setLoads] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [unitSearch, setUnitSearch] = useState("");
   const mapRef = useRef(null);
+  const [editLoad, setEditLoad] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -65,9 +69,19 @@ export const Loads = () => {
     }
   };
 
-  const filteredLoads = loads.filter(load =>
-    filter === "all" || load.state === filter
-  );
+  const filteredLoads = loads.filter(load => {
+    const matchesStatus = filter === "all" || load.state === filter;
+    const matchesUnit = unitSearch === "" ||
+      load.user?.unitNumber
+        ?.toString()
+        .toLowerCase()
+        .includes(unitSearch.toLowerCase());
+    return matchesStatus && matchesUnit;
+  });
+
+  // const filteredLoads = loads.filter(load =>
+  //   filter === "all" || load.state === filter
+  // );
 
   const loadsWithLocation = filteredLoads.filter(
     load => load.user?.lat != null && load.user?.lon != null
@@ -129,6 +143,241 @@ export const Loads = () => {
     return `Unit ${load._id?.slice(-6).toUpperCase()}`;
   };
 
+  /* ─── Edit Load Modal ─────────────────────────────── */
+
+  const EditLoadModal = ({ load, onClose }) => {
+    const toLocalDatetime = (iso) => {
+      if (!iso) return "";
+      const d = new Date(iso);
+      const offset = d.getTimezoneOffset() * 60000;
+      return new Date(d - offset).toISOString().slice(0, 16);
+    };
+
+    const [form, setForm] = useState({
+      datePickUp: toLocalDatetime(load.datePickUp),
+      companyNamePickUp: load.companyNamePickUp || "",
+      addressPickup: load.addressPickup     || "",
+      cityPickUp: load.cityPickUp        || "",
+      dateDelivery: toLocalDatetime(load.dateDelivery),
+      companyDelivery: load.companyDelivery   || "",
+      addressDelivery: load.addressDelivery   || "",
+      cityDelivery: load.cityDelivery      || "",
+      rate:load.rate != null ? `$${Number(load.rate).toLocaleString("en-US")}` : "",
+      state: load.state             || "active",
+    });
+
+    const [loading, setLoading] = useState(false);
+
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      if (name === "rate") {
+        const digits = value.replace(/\D/g, "");
+        const formatted = digits ? `$${Number(digits).toLocaleString("en-US")}` : "";
+        setForm(f => ({ ...f, rate: formatted }));
+        return;
+      }
+      setForm(f => ({ ...f, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      const { datePickUp, companyNamePickUp, addressPickup, cityPickUp, dateDelivery, companyDelivery, addressDelivery, cityDelivery, rate, state } = form;
+
+      if (!datePickUp || !companyNamePickUp || !addressPickup || !cityPickUp || !dateDelivery || !companyDelivery || !addressDelivery || !cityDelivery || !rate) {
+        Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
+        return;
+      }
+      try {
+        setLoading(true);
+        const response = await fetch(`${backendBaseUrl}/load/${load._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            datePickUp: new Date(datePickUp).toISOString(),
+            companyNamePickUp, addressPickup, cityPickUp,
+            dateDelivery: new Date(dateDelivery).toISOString(),
+            companyDelivery, addressDelivery, cityDelivery,
+            rate: rate.replace(/\D/g, ""),
+            state,
+          }),
+        });
+        const data = await response.json();
+        if (response.ok) {
+          onClose();
+          Swal.fire({
+            icon: "success",
+            title: "Load updated",
+            text: "The load was updated successfully",
+            confirmButtonColor: "#2563eb",
+          }).then(() => window.location.reload());
+        } else {
+          Swal.fire({ icon: "error", title: "Error", text: data.message || "Could not update the load", confirmButtonColor: "#2563eb" });
+        }
+
+      } catch {
+        Swal.fire({ icon: "error", title: "Server error", text: "Please try again", confirmButtonColor: "#2563eb" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const inputClass = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition";
+    const labelClass = "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1";
+
+    return (
+      
+      <div
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+
+          {/* Header */}
+          <div className="bg-blue-600 px-6 py-5 flex items-start justify-between flex-shrink-0">
+            <div>
+              <h2 className="text-xl font-bold text-white">Edit Load</h2>
+              <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 mt-2">
+                <div className="w-5 h-5 bg-white/30 rounded-full flex items-center justify-center text-xs">👤</div>
+                <span className="text-sm font-semibold text-white">
+                  {load.user?.name} {load.user?.lastName}
+                </span>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/70 hover:text-white transition mt-1">
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Body */}
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+
+              {/* State */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">🔄</span>
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Status</span>
+                  <div className="flex-1 h-px bg-gray-100" />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(STATUS_LABELS).filter(([key]) => key !== "all").map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, state: key }))}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                        form.state === key
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pickup */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">📍</span>
+                  <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Pickup</span>
+                  <div className="flex-1 h-px bg-blue-100" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Date & Time</label>
+                    <input type="datetime-local" name="datePickUp" value={form.datePickUp} onChange={handleChange} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Company</label>
+                    <input type="text" name="companyNamePickUp" value={form.companyNamePickUp} onChange={handleChange} placeholder="Company name" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Address</label>
+                    <input type="text" name="addressPickup" value={form.addressPickup} onChange={handleChange} placeholder="Street address" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>City</label>
+                    <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder="City" className={inputClass} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">🚚</span>
+                  <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">Delivery</span>
+                  <div className="flex-1 h-px bg-cyan-100" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Date & Time</label>
+                    <input type="datetime-local" name="dateDelivery" value={form.dateDelivery} onChange={handleChange} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Company</label>
+                    <input type="text" name="companyDelivery" value={form.companyDelivery} onChange={handleChange} placeholder="Company name" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Address</label>
+                    <input type="text" name="addressDelivery" value={form.addressDelivery} onChange={handleChange} placeholder="Street address" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>City</label>
+                    <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder="City" className={inputClass} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Rate */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">💰</span>
+                  <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Rate</span>
+                  <div className="flex-1 h-px bg-emerald-100" />
+                </div>
+                <div className="max-w-[200px]">
+                  <label className={labelClass}>Amount</label>
+                  <input
+                    type="text"
+                    name="rate"
+                    value={form.rate}
+                    onChange={handleChange}
+                    placeholder="$0"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition font-semibold text-emerald-700"
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    );
+  };
+
   const selectedLoad = loads.find(l => l._id === selectedId);
 
   if (!isLoaded) {
@@ -155,9 +404,21 @@ export const Loads = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span className="text-sm text-gray-400">
-              Filter {loads.length} assets
-            </span>
+            <input
+              type="text"
+              value={unitSearch}
+              onChange={(e) => { setUnitSearch(e.target.value); setSelectedId(null); }}
+              placeholder={`Search ${loads.length} assets...`}
+              className="flex-1 text-sm text-gray-700 bg-transparent outline-none placeholder-gray-400"
+            />
+            {unitSearch && (
+              <button
+                onClick={() => { setUnitSearch(""); setSelectedId(null); }}
+                className="text-gray-300 hover:text-gray-500 transition flex-shrink-0"
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 
@@ -201,51 +462,108 @@ export const Loads = () => {
               <p className="text-sm">No loads found</p>
             </div>
           ) : (
-            filteredLoads.map(load => (
-              <div
-                key={load._id}
-                onClick={() => handleSelectLoad(load)}
-                className={`px-4 py-3 border-b cursor-pointer hover:bg-gray-50 transition-all select-none ${
-                  selectedId === load._id
-                    ? "bg-blue-50 border-l-[3px] border-l-blue-500"
-                    : "border-l-[3px] border-l-transparent"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      load.state === "on_the_way" || load.state === "active" ? "bg-green-400" : "bg-gray-300"
-                    }`} />
-                    <span className="font-semibold text-sm text-gray-800 truncate">
-                      {getUnitLabel(load)}
+            filteredLoads.map(load => {
+              const fmt = (iso) => {
+                if (!iso) return "—";
+                const d = new Date(iso);
+                return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+                  " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+              };
+
+              return (
+                <div
+                  key={load._id}
+                  onClick={() => handleSelectLoad(load)}
+                  className={`px-4 py-3 border-b cursor-pointer hover:bg-gray-50 transition-all select-none ${
+                    selectedId === load._id
+                      ? "bg-blue-50 border-l-[3px] border-l-blue-500"
+                      : "border-l-[3px] border-l-transparent"
+                  }`}
+                >
+                  {/* ── Top row: unit label + speed + edit ── */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        load.state === "on_the_way" || load.state === "active" ? "bg-green-400" : "bg-gray-300"
+                      }`} />
+                      <span className="font-semibold text-sm text-gray-800 truncate">
+                        {getUnitLabel(load)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {load.user?.speed != null && (
+                        <span className="text-xs font-bold text-green-600">
+                          {load.user.speed} MPH
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditLoad(load); }}
+                        className="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                        title="Edit load"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Driver name */}
+                  {load.user && load.user.name !== getUnitLabel(load) && (
+                    <p className="text-xs text-gray-400 mt-0.5 ml-4 truncate">
+                      {load.user.name} {load.user.lastName}
+                    </p>
+                  )}
+
+                  {/* Status badge */}
+                  <div className="mt-1.5 ml-4">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${
+                      STATUS_COLORS[load.state] || "bg-gray-100 text-gray-600 border-gray-200"
+                    }`}>
+                      {STATUS_LABELS[load.state] || load.state}
                     </span>
                   </div>
-                  {load.user?.speed != null && (
-                    <span className="text-xs font-bold text-green-600 whitespace-nowrap flex-shrink-0">
-                      {load.user.speed} MPH
-                    </span>
-                  )}
+
+                  {/* ── Load details ── */}
+                  <div className="mt-2 ml-4 space-y-1.5">
+
+                    {/* Pickup */}
+                    <div className="flex gap-1.5">
+                      <span className="text-[10px] mt-0.5">📍</span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide leading-none mb-0.5">Pickup</p>
+                        <p className="text-xs text-gray-600 truncate font-medium">{load.companyNamePickUp}</p>
+                        <p className="text-[11px] text-gray-400 truncate">{load.addressPickup}, {load.cityPickUp}</p>
+                        <p className="text-[11px] text-gray-400">{fmt(load.datePickUp)}</p>
+                      </div>
+                    </div>
+
+                    {/* Delivery */}
+                    <div className="flex gap-1.5">
+                      <span className="text-[10px] mt-0.5">🚚</span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide leading-none mb-0.5">Delivery</p>
+                        <p className="text-xs text-gray-600 truncate font-medium">{load.companyDelivery}</p>
+                        <p className="text-[11px] text-gray-400 truncate">{load.addressDelivery}, {load.cityDelivery}</p>
+                        <p className="text-[11px] text-gray-400">{fmt(load.dateDelivery)}</p>
+                      </div>
+                    </div>
+
+                    {/* Rate */}
+                    {load.rate != null && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px]">💰</span>
+                        <span className="text-xs font-bold text-emerald-600">
+                          ${Number(load.rate).toLocaleString("en-US")}
+                        </span>
+                      </div>
+                    )}
+
+                  </div>
                 </div>
-
-                {load.user && load.user.name !== getUnitLabel(load) && (
-                  <p className="text-xs text-gray-400 mt-0.5 ml-4 truncate">
-                    {load.user.name} {load.user.lastName}
-                  </p>
-                )}
-
-                <p className="text-xs text-gray-400 mt-0.5 ml-4 truncate">
-                  📍 {load.cityPickUp} → {load.cityDelivery}
-                </p>
-
-                <div className="mt-1.5 ml-4">
-                  <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${
-                    STATUS_COLORS[load.state] || "bg-gray-100 text-gray-600 border-gray-200"
-                  }`}>
-                    {STATUS_LABELS[load.state] || load.state}
-                  </span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -262,6 +580,13 @@ export const Loads = () => {
         )}
 
       </div>
+
+      {editLoad && (
+        <EditLoadModal
+          load={editLoad}
+          onClose={() => setEditLoad(null)}
+        />
+      )}
 
       {/* MAP */}
       <div className="flex-1 relative">

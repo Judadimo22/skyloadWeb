@@ -59,8 +59,10 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          datePickUp, companyNamePickUp, addressPickup, cityPickUp,
-          dateDelivery, companyDelivery, addressDelivery, cityDelivery,
+          datePickUp: new Date(datePickUp).toISOString(),   // ← convierte a ISO con hora
+          companyNamePickUp, addressPickup, cityPickUp,
+          dateDelivery: new Date(dateDelivery).toISOString(), // ← convierte a ISO con hora
+          companyDelivery, addressDelivery, cityDelivery,
           rate: rate.replace(/\D/g, ""),
           user: user._id,
         }),
@@ -132,7 +134,7 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>Date</label>
-                  <input type="date" name="datePickUp" value={form.datePickUp} onChange={handleChange} className={inputClass} />
+                  <input type="datetime-local" name="datePickUp" value={form.datePickUp} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
                   <label className={labelClass}>Company</label>
@@ -159,7 +161,7 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>Date</label>
-                  <input type="date" name="dateDelivery" value={form.dateDelivery} onChange={handleChange} className={inputClass} />
+                  <input type="datetime-local" name="dateDelivery" value={form.dateDelivery} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
                   <label className={labelClass}>Company</label>
@@ -228,7 +230,7 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
 
 /* ─── Register Driver Modal ─────────────────────────── */
 
-const EMPTY_REGISTER = { name: "", lastName: "", email: "", password: "", vehicle: "" };
+const EMPTY_REGISTER = { name: "", lastName: "", email: "", password: "", vehicle: "" , vehicleDimension:"", unitNumber: "", confirmPassword: ""};
 
 const RegisterDriverModal = ({ onClose, onSuccess }) => {
 
@@ -242,14 +244,19 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.name || !form.lastName || !form.email || !form.password) {
+    if (!form.name || !form.lastName || !form.email || !form.password || !form.vehicleDimension || !form.unitNumber || !form.confirmPassword) {
       Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
+      return;
+    }
+
+    if(form.password != form.confirmPassword){
+      Swal.fire({ icon: "warning", title: "Passwords do not match", text: "Passwords do not match", confirmButtonColor: "#2563eb" });
       return;
     }
 
     try {
       setLoading(true);
-      const result = await dispatch(registerUser(form.email, form.password, form.name, form.lastName, form.vehicle));
+      const result = await dispatch(registerUser(form.email, form.password, form.name, form.lastName, form.vehicle, form.vehicleDimension, form.unitNumber));
 
       if (result.token) {
         onClose();
@@ -308,10 +315,26 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
 
             {/* Vehicle */}
             <div>
-              <label className={labelClass}>Vehicle / Unit ID</label>
+              <label className={labelClass}>Vehicle</label>
               <div className="relative">
                 <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" name="vehicle" value={form.vehicle} onChange={handleChange} placeholder="e.g. Unit 5607" className={inputClass} />
+                <input type="text" name="vehicle" value={form.vehicle} onChange={handleChange} placeholder="" className={inputClass} />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Vehicle Dimensions</label>
+              <div className="relative">
+                <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="text" name="vehicleDimension" value={form.vehicleDimension} onChange={handleChange} placeholder="" className={inputClass} />
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Unit number</label>
+              <div className="relative">
+                <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="text" name="unitNumber" value={form.unitNumber} onChange={handleChange} placeholder="" className={inputClass} />
               </div>
             </div>
 
@@ -335,6 +358,31 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   value={form.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  className="w-full pl-9 pr-12 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className={labelClass}>Confirm Password</label>
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={form.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
                   autoComplete="new-password"
@@ -380,12 +428,22 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
 
 /* ─── Users List ─────────────────────────────────────── */
 
-export const UsersList = () => {
+// Cambia solo la firma del componente y agrega el filtrado
+
+export const UsersList = ({ unitFilter = "" }) => {
 
   const users = useSelector((state) => state.users);
   const dispatch = useDispatch();
   const [assignUser, setAssignUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
+
+  // ── Filtrado por unitNumber ──────────────────────────
+  const filteredUsers = users.filter((user) =>
+    user.unitNumber
+      ?.toString()
+      .toLowerCase()
+      .includes(unitFilter.toLowerCase())
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -432,30 +490,44 @@ export const UsersList = () => {
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">
               <th className="px-6 py-3">First Name</th>
               <th className="px-6 py-3">Last Name</th>
+              <th className="px-6 py-3">Unit #</th>
               <th className="px-6 py-3">Email</th>
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user._id} className="border-b last:border-none hover:bg-gray-50 transition">
-                <td className="px-6 py-4 text-sm font-medium text-gray-800">{user.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{user.lastName}</td>
-                <td className="px-6 py-4">
-                  <span className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-medium">
-                    {user.email}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => setAssignUser(user)}
-                    className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition text-xs font-semibold"
-                  >
-                    Assign Load
-                  </button>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <tr key={user._id} className="border-b last:border-none hover:bg-gray-50 transition">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-800">{user.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{user.lastName}</td>
+                  <td className="px-6 py-4">
+                    <span className="bg-gray-100 text-gray-700 border border-gray-200 px-3 py-1 rounded-full text-xs font-semibold">
+                      #{user.unitNumber ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-medium">
+                      {user.email}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => setAssignUser(user)}
+                      className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition text-xs font-semibold"
+                    >
+                      Assign Load
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-400">
+                  No drivers match unit number <span className="font-semibold text-gray-600">"{unitFilter}"</span>
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
