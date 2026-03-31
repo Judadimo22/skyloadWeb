@@ -499,7 +499,7 @@ export const Loads = () => {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {load.user?.speed != null && (
                         <span className="text-xs font-bold text-green-600">
-                          {load.user.speed} MPH
+                          {load.user.speed} KM/H
                         </span>
                       )}
                       <button
@@ -585,7 +585,7 @@ export const Loads = () => {
             <p className="font-semibold truncate">{getUnitLabel(selectedLoad)}</p>
             {selectedLoad.user?.lat && (
               <p className="text-blue-500 mt-0.5">
-                {Number(selectedLoad.user.lat).toFixed(5)}, {Number(selectedLoad.user.lon).toFixed(5)}
+                {selectedLoad.speed ?? ''} Km/h
               </p>
             )}
           </div>
