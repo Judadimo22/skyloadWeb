@@ -18,6 +18,8 @@ const EMPTY_FORM = {
   addressDelivery: "",
   cityDelivery: "",
   rate: "",
+  notePickUp: "",
+  noteDelivery: ""
 };
 
 const AssignLoadModal = ({ user, onClose, onSuccess }) => {
@@ -59,10 +61,12 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          datePickUp: new Date(datePickUp).toISOString(),   // ← convierte a ISO con hora
+          datePickUp: new Date(datePickUp).toISOString(),
           companyNamePickUp, addressPickup, cityPickUp,
-          dateDelivery: new Date(dateDelivery).toISOString(), // ← convierte a ISO con hora
+          notePickUp: form.notePickUp,           // ← agregar
+          dateDelivery: new Date(dateDelivery).toISOString(),
           companyDelivery, addressDelivery, cityDelivery,
+          noteDelivery: form.noteDelivery,       // ← agregar
           rate: rate.replace(/\D/g, ""),
           user: user._id,
         }),
@@ -149,6 +153,17 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
                   <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder="City" className={inputClass} />
                 </div>
               </div>
+              <div className="mt-3">
+                <label className={labelClass}>Notes</label>
+                <textarea
+                  name="notePickUp"
+                  value={form.notePickUp}
+                  onChange={handleChange}
+                  placeholder="Additional pickup instructions..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                />
+              </div>
             </div>
 
             {/* Delivery section */}
@@ -175,6 +190,17 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
                   <label className={labelClass}>City</label>
                   <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder="City" className={inputClass} />
                 </div>
+              </div>
+              <div className="mt-3">
+                <label className={labelClass}>Notes</label>
+                <textarea
+                  name="noteDelivery"
+                  value={form.noteDelivery}
+                  onChange={handleChange}
+                  placeholder="Additional delivery instructions..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition resize-none"
+                />
               </div>
             </div>
 

@@ -46,6 +46,7 @@ export const Loads = () => {
   const [filter, setFilter] = useState("all");
   const [unitSearch, setUnitSearch] = useState("");
   const mapRef = useRef(null);
+  const hasFitOnce = useRef(false);
   const [editLoad, setEditLoad] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
@@ -105,11 +106,16 @@ export const Loads = () => {
     mapRef.current = map;
   };
 
-  // Fit all when no selection
+  useEffect(() => {
+    hasFitOnce.current = false; // reset cuando cambia filtro o búsqueda
+  }, [filter, unitSearch]);
+
   useEffect(() => {
     if (!mapRef.current || selectedId || loadsWithLocation.length === 0) return;
+    if (hasFitOnce.current) return; // ya se hizo el fit, no volver a hacerlo
     fitAll(mapRef.current, loadsWithLocation);
-  }, [loads, filter, selectedId]);
+    hasFitOnce.current = true;
+  }, [loadsWithLocation, selectedId]);
 
   // Follow selected driver in real-time
   useEffect(() => {
@@ -536,6 +542,9 @@ export const Loads = () => {
                         <p className="text-xs text-gray-600 truncate font-medium">{load.companyNamePickUp}</p>
                         <p className="text-[11px] text-gray-400 truncate">{load.addressPickup}, {load.cityPickUp}</p>
                         <p className="text-[11px] text-gray-400">{fmt(load.datePickUp)}</p>
+                        {load.notePickUp && (
+                          <p className="text-[11px] text-blue-400 italic mt-0.5 line-clamp-2">{load.notePickUp}</p>
+                        )}
                       </div>
                     </div>
 
@@ -547,6 +556,9 @@ export const Loads = () => {
                         <p className="text-xs text-gray-600 truncate font-medium">{load.companyDelivery}</p>
                         <p className="text-[11px] text-gray-400 truncate">{load.addressDelivery}, {load.cityDelivery}</p>
                         <p className="text-[11px] text-gray-400">{fmt(load.dateDelivery)}</p>
+                        {load.noteDelivery && (
+                          <p className="text-[11px] text-cyan-400 italic mt-0.5 line-clamp-2">{load.noteDelivery}</p>
+                        )}
                       </div>
                     </div>
 

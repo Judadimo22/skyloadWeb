@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../../redux/actions/adminActions";
 import { AlertCircle, Eye, EyeOff, Mail, MapPin, Package, Truck, Users } from "lucide-react";
+import  logoSencillo  from '../../assets/logoApp.png'
 
 const FEATURES = [
   { icon: MapPin,   text: "Live GPS tracking for all drivers" },
@@ -56,21 +57,23 @@ export default function Login() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+          <div className="w-25 h-25 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30 px-2">
+          <img src="" alt="" />
+          <img src={logoSencillo} alt="" />
             <Truck size={20} className="text-white" />
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">Skyload Admin</span>
+          <span className="text-xl font-bold text-white tracking-tight">Fleet Point 360 Admin</span>
         </div>
 
         {/* Hero */}
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 rounded-full px-4 py-1.5 mb-6">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-            <span className="text-blue-300 text-xs font-semibold uppercase tracking-widest">Fleet Management Platform</span>
+            <span className="text-blue-300 text-xs font-semibold uppercase tracking-widest">Fleet Point 360 Platform</span>
           </div>
 
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Real-time fleet<br />
+            Fleet Point 360<br />
             <span className="text-blue-400">management</span>
           </h1>
 
