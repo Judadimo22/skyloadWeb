@@ -34,7 +34,7 @@ export const Home = () => {
               <Map size={15} className="text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white leading-tight">Skyload</h1>
+              <h1 className="text-sm font-bold text-white leading-tight">Fleetpoint 360</h1>
               <p className="text-xs text-slate-500 leading-tight">Admin Panel</p>
             </div>
           </div>
@@ -86,7 +86,7 @@ export const Home = () => {
 
       ) : (
 
-        <main className="flex-1 overflow-auto bg-gray-50">
+        <main className="flex-1 overflow-auto bg-white">
 
           {/* Page header */}
           <div className="bg-white border-b px-8 py-5 flex items-center justify-between">
@@ -101,7 +101,7 @@ export const Home = () => {
           </div>
 
           <div className="p-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl ">
 
               {/* Search bar */}
               <div className="px-6 py-4 border-b border-gray-100">

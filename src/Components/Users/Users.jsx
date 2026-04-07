@@ -13,10 +13,12 @@ const EMPTY_FORM = {
   companyNamePickUp: "",
   addressPickup: "",
   cityPickUp: "",
+  notePickUp: "",
   dateDelivery: "",
   companyDelivery: "",
   addressDelivery: "",
   cityDelivery: "",
+  noteDelivery: "",
   rate: "",
 };
 
@@ -59,10 +61,12 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          datePickUp: new Date(datePickUp).toISOString(),   // ← convierte a ISO con hora
+          datePickUp: new Date(datePickUp).toISOString(),
           companyNamePickUp, addressPickup, cityPickUp,
-          dateDelivery: new Date(dateDelivery).toISOString(), // ← convierte a ISO con hora
+          notePickUp: form.notePickUp,
+          dateDelivery: new Date(dateDelivery).toISOString(),
           companyDelivery, addressDelivery, cityDelivery,
+          noteDelivery: form.noteDelivery,
           rate: rate.replace(/\D/g, ""),
           user: user._id,
         }),
@@ -148,6 +152,10 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
                   <label className={labelClass}>City</label>
                   <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder="City" className={inputClass} />
                 </div>
+                <div className="col-span-2">
+                  <label className={labelClass}>Note for driver (pickup)</label>
+                  <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder="Instructions for pickup..." rows={2} className={inputClass + " resize-none"} />
+                </div>
               </div>
             </div>
 
@@ -174,6 +182,10 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
                 <div>
                   <label className={labelClass}>City</label>
                   <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder="City" className={inputClass} />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelClass}>Note for driver (delivery)</label>
+                  <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder="Instructions for delivery..." rows={2} className={inputClass + " resize-none"} />
                 </div>
               </div>
             </div>
@@ -437,13 +449,21 @@ export const UsersList = ({ unitFilter = "" }) => {
   const [assignUser, setAssignUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
 
-  // ── Filtrado por unitNumber ──────────────────────────
-  const filteredUsers = users.filter((user) =>
-    user.unitNumber
-      ?.toString()
-      .toLowerCase()
-      .includes(unitFilter.toLowerCase())
-  );
+  // ── Filtrado por unitNumber, orden A-Z ──────────────
+  const filteredUsers = users
+    .filter((user) =>
+      user.unitNumber
+        ?.toString()
+        .toLowerCase()
+        .includes(unitFilter.toLowerCase())
+    )
+    .sort((a, b) =>
+      (a.unitNumber || "").toString().localeCompare(
+        (b.unitNumber || "").toString(),
+        undefined,
+        { numeric: true }
+      )
+    );
 
   useEffect(() => {
     const fetchData = async () => {

@@ -39,9 +39,13 @@ const STATUS_COLORS = {
   completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
 };
 
+// Convert km/h to mph
+const toMph = (speed) => Math.round(speed * 0.621371);
+
 export const Loads = () => {
 
   const [loads, setLoads] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("all");
   const [unitSearch, setUnitSearch] = useState("");
@@ -55,7 +59,11 @@ export const Loads = () => {
 
   useEffect(() => {
     getLoads();
-    const interval = setInterval(getLoads, 5000);
+    getDrivers();
+    const interval = setInterval(() => {
+      getLoads();
+      getDrivers();
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -69,35 +77,49 @@ export const Loads = () => {
     }
   };
 
-  const filteredLoads = loads.filter(load => {
-    const matchesStatus = filter === "all" || load.state === filter;
-    const matchesUnit = unitSearch === "" ||
-      load.user?.unitNumber
-        ?.toString()
-        .toLowerCase()
-        .includes(unitSearch.toLowerCase());
-    return matchesStatus && matchesUnit;
-  });
+  const getDrivers = async () => {
+    try {
+      const res = await fetch(`${backendBaseUrl}/users`);
+      const data = await res.json();
+      setAllUsers(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-  // const filteredLoads = loads.filter(load =>
-  //   filter === "all" || load.state === filter
-  // );
+  // Exclude completed from "All" filter; sort A-Z by unit number
+  const filteredLoads = loads
+    .filter(load => {
+      if (filter === "all" && load.state === "completed") return false;
+      const matchesStatus = filter === "all" || load.state === filter;
+      const matchesUnit =
+        unitSearch === "" ||
+        load.user?.unitNumber
+          ?.toString()
+          .toLowerCase()
+          .includes(unitSearch.toLowerCase());
+      return matchesStatus && matchesUnit;
+    })
+    .sort((a, b) => {
+      const ua = (a.user?.unitNumber || "").toString();
+      const ub = (b.user?.unitNumber || "").toString();
+      return ua.localeCompare(ub, undefined, { numeric: true });
+    });
 
-  const loadsWithLocation = filteredLoads.filter(
-    load => load.user?.lat != null && load.user?.lon != null
+  // All users with known location — always shown on map
+  const usersWithLocation = allUsers.filter(
+    u => u.lat != null && u.lon != null
   );
 
   const fitAll = (map, items) => {
     if (!map || items.length === 0) return;
     if (items.length === 1) {
-      map.setCenter({ lat: Number(items[0].user.lat), lng: Number(items[0].user.lon) });
+      map.setCenter({ lat: Number(items[0].lat), lng: Number(items[0].lon) });
       map.setZoom(14);
       return;
     }
     const bounds = new window.google.maps.LatLngBounds();
-    items.forEach(load => {
-      bounds.extend({ lat: Number(load.user.lat), lng: Number(load.user.lon) });
-    });
+    items.forEach(u => bounds.extend({ lat: Number(u.lat), lng: Number(u.lon) }));
     map.fitBounds(bounds, 80);
   };
 
@@ -105,11 +127,13 @@ export const Loads = () => {
     mapRef.current = map;
   };
 
-  // Fit all when no selection
+  // Fit all drivers when nothing selected
   useEffect(() => {
-    if (!mapRef.current || selectedId || loadsWithLocation.length === 0) return;
-    fitAll(mapRef.current, loadsWithLocation);
-  }, [loads, filter, selectedId]);
+    if (!mapRef.current || selectedId) return;
+    if (usersWithLocation.length > 0) {
+      fitAll(mapRef.current, usersWithLocation);
+    }
+  }, [loads, allUsers, filter, selectedId]);
 
   // Follow selected driver in real-time
   useEffect(() => {
@@ -138,6 +162,7 @@ export const Loads = () => {
   };
 
   const getUnitLabel = (load) => {
+    if (load.user?.unitNumber) return load.user.unitNumber;
     if (load.user?.vehicle) return load.user.vehicle;
     if (load.user?.name) return `${load.user.name} ${load.user.lastName || ""}`.trim();
     return `Unit ${load._id?.slice(-6).toUpperCase()}`;
@@ -156,14 +181,16 @@ export const Loads = () => {
     const [form, setForm] = useState({
       datePickUp: toLocalDatetime(load.datePickUp),
       companyNamePickUp: load.companyNamePickUp || "",
-      addressPickup: load.addressPickup     || "",
-      cityPickUp: load.cityPickUp        || "",
+      addressPickup: load.addressPickup || "",
+      cityPickUp: load.cityPickUp || "",
+      notePickUp: load.notePickUp || "",
       dateDelivery: toLocalDatetime(load.dateDelivery),
-      companyDelivery: load.companyDelivery   || "",
-      addressDelivery: load.addressDelivery   || "",
-      cityDelivery: load.cityDelivery      || "",
-      rate:load.rate != null ? `$${Number(load.rate).toLocaleString("en-US")}` : "",
-      state: load.state             || "active",
+      companyDelivery: load.companyDelivery || "",
+      addressDelivery: load.addressDelivery || "",
+      cityDelivery: load.cityDelivery || "",
+      noteDelivery: load.noteDelivery || "",
+      rate: load.rate != null ? `$${Number(load.rate).toLocaleString("en-US")}` : "",
+      state: load.state || "active",
     });
 
     const [loading, setLoading] = useState(false);
@@ -181,9 +208,14 @@ export const Loads = () => {
 
     const handleSubmit = async (e) => {
       e.preventDefault();
-      const { datePickUp, companyNamePickUp, addressPickup, cityPickUp, dateDelivery, companyDelivery, addressDelivery, cityDelivery, rate, state } = form;
+      const {
+        datePickUp, companyNamePickUp, addressPickup, cityPickUp,
+        dateDelivery, companyDelivery, addressDelivery, cityDelivery,
+        rate, state, notePickUp, noteDelivery,
+      } = form;
 
-      if (!datePickUp || !companyNamePickUp || !addressPickup || !cityPickUp || !dateDelivery || !companyDelivery || !addressDelivery || !cityDelivery || !rate) {
+      if (!datePickUp || !companyNamePickUp || !addressPickup || !cityPickUp ||
+          !dateDelivery || !companyDelivery || !addressDelivery || !cityDelivery || !rate) {
         Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
         return;
       }
@@ -195,8 +227,10 @@ export const Loads = () => {
           body: JSON.stringify({
             datePickUp: new Date(datePickUp).toISOString(),
             companyNamePickUp, addressPickup, cityPickUp,
+            notePickUp,
             dateDelivery: new Date(dateDelivery).toISOString(),
             companyDelivery, addressDelivery, cityDelivery,
+            noteDelivery,
             rate: rate.replace(/\D/g, ""),
             state,
           }),
@@ -213,7 +247,6 @@ export const Loads = () => {
         } else {
           Swal.fire({ icon: "error", title: "Error", text: data.message || "Could not update the load", confirmButtonColor: "#2563eb" });
         }
-
       } catch {
         Swal.fire({ icon: "error", title: "Server error", text: "Please try again", confirmButtonColor: "#2563eb" });
       } finally {
@@ -221,11 +254,42 @@ export const Loads = () => {
       }
     };
 
+    const handleCancelLoad = async () => {
+      const result = await Swal.fire({
+        icon: "warning",
+        title: "Cancel Load?",
+        text: "The driver will be notified that this load has been cancelled.",
+        showCancelButton: true,
+        confirmButtonText: "Yes, cancel it",
+        cancelButtonText: "Keep it",
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
+      });
+      if (!result.isConfirmed) return;
+      try {
+        const response = await fetch(`${backendBaseUrl}/load/${load._id}`, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          onClose();
+          Swal.fire({
+            icon: "success",
+            title: "Load cancelled",
+            text: "The driver has been notified.",
+            confirmButtonColor: "#2563eb",
+          }).then(() => window.location.reload());
+        } else {
+          Swal.fire({ icon: "error", title: "Error", text: "Could not cancel the load", confirmButtonColor: "#2563eb" });
+        }
+      } catch {
+        Swal.fire({ icon: "error", title: "Server error", text: "Please try again", confirmButtonColor: "#2563eb" });
+      }
+    };
+
     const inputClass = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition";
     const labelClass = "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1";
 
     return (
-      
       <div
         className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
         onClick={(e) => e.target === e.currentTarget && onClose()}
@@ -301,6 +365,10 @@ export const Loads = () => {
                     <label className={labelClass}>City</label>
                     <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder="City" className={inputClass} />
                   </div>
+                  <div className="col-span-2">
+                    <label className={labelClass}>Note for driver (pickup)</label>
+                    <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder="Instructions for pickup..." rows={2} className={inputClass + " resize-none"} />
+                  </div>
                 </div>
               </div>
 
@@ -328,6 +396,10 @@ export const Loads = () => {
                     <label className={labelClass}>City</label>
                     <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder="City" className={inputClass} />
                   </div>
+                  <div className="col-span-2">
+                    <label className={labelClass}>Note for driver (delivery)</label>
+                    <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder="Instructions for delivery..." rows={2} className={inputClass + " resize-none"} />
+                  </div>
                 </div>
               </div>
 
@@ -354,22 +426,31 @@ export const Loads = () => {
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
+            <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between gap-3 flex-shrink-0">
               <button
                 type="button"
-                onClick={onClose}
-                className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium"
+                onClick={handleCancelLoad}
+                className="px-5 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-100 transition"
               >
-                Cancel
+                Cancel Load
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                {loading ? "Saving..." : "Save Changes"}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {loading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             </div>
           </form>
 
@@ -454,7 +535,7 @@ export const Loads = () => {
           </span>
         </div>
 
-        {/* Driver list */}
+        {/* Driver list — compact by default, expanded when selected */}
         <div className="flex-1 overflow-y-auto">
           {filteredLoads.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
@@ -463,6 +544,7 @@ export const Loads = () => {
             </div>
           ) : (
             filteredLoads.map(load => {
+              const isSelected = selectedId === load._id;
               const fmt = (iso) => {
                 if (!iso) return "—";
                 const d = new Date(iso);
@@ -475,7 +557,7 @@ export const Loads = () => {
                   key={load._id}
                   onClick={() => handleSelectLoad(load)}
                   className={`px-4 py-3 border-b cursor-pointer hover:bg-gray-50 transition-all select-none ${
-                    selectedId === load._id
+                    isSelected
                       ? "bg-blue-50 border-l-[3px] border-l-blue-500"
                       : "border-l-[3px] border-l-transparent"
                   }`}
@@ -493,7 +575,7 @@ export const Loads = () => {
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {load.user?.speed != null && (
                         <span className="text-xs font-bold text-green-600">
-                          {load.user.speed} MPH
+                          {toMph(load.user.speed)} MPH
                         </span>
                       )}
                       <button
@@ -509,14 +591,7 @@ export const Loads = () => {
                     </div>
                   </div>
 
-                  {/* Driver name */}
-                  {load.user && load.user.name !== getUnitLabel(load) && (
-                    <p className="text-xs text-gray-400 mt-0.5 ml-4 truncate">
-                      {load.user.name} {load.user.lastName}
-                    </p>
-                  )}
-
-                  {/* Status badge */}
+                  {/* Status badge — always visible */}
                   <div className="mt-1.5 ml-4">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${
                       STATUS_COLORS[load.state] || "bg-gray-100 text-gray-600 border-gray-200"
@@ -525,42 +600,57 @@ export const Loads = () => {
                     </span>
                   </div>
 
-                  {/* ── Load details ── */}
-                  <div className="mt-2 ml-4 space-y-1.5">
+                  {/* ── Expanded details (only when selected) ── */}
+                  {isSelected && (
+                    <div className="mt-2 ml-4 space-y-1.5">
 
-                    {/* Pickup */}
-                    <div className="flex gap-1.5">
-                      <span className="text-[10px] mt-0.5">📍</span>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide leading-none mb-0.5">Pickup</p>
-                        <p className="text-xs text-gray-600 truncate font-medium">{load.companyNamePickUp}</p>
-                        <p className="text-[11px] text-gray-400 truncate">{load.addressPickup}, {load.cityPickUp}</p>
-                        <p className="text-[11px] text-gray-400">{fmt(load.datePickUp)}</p>
+                      {/* Driver name */}
+                      {load.user && (
+                        <p className="text-xs text-gray-400 truncate">
+                          {load.user.name} {load.user.lastName}
+                        </p>
+                      )}
+
+                      {/* Pickup */}
+                      <div className="flex gap-1.5">
+                        <span className="text-[10px] mt-0.5">📍</span>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide leading-none mb-0.5">Pickup</p>
+                          <p className="text-xs text-gray-600 truncate font-medium">{load.companyNamePickUp}</p>
+                          <p className="text-[11px] text-gray-400 truncate">{load.addressPickup}, {load.cityPickUp}</p>
+                          <p className="text-[11px] text-gray-400">{fmt(load.datePickUp)}</p>
+                          {load.notePickUp && (
+                            <p className="text-[11px] text-blue-500 italic mt-0.5">{load.notePickUp}</p>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Delivery */}
+                      <div className="flex gap-1.5">
+                        <span className="text-[10px] mt-0.5">🚚</span>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide leading-none mb-0.5">Delivery</p>
+                          <p className="text-xs text-gray-600 truncate font-medium">{load.companyDelivery}</p>
+                          <p className="text-[11px] text-gray-400 truncate">{load.addressDelivery}, {load.cityDelivery}</p>
+                          <p className="text-[11px] text-gray-400">{fmt(load.dateDelivery)}</p>
+                          {load.noteDelivery && (
+                            <p className="text-[11px] text-cyan-500 italic mt-0.5">{load.noteDelivery}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rate */}
+                      {load.rate != null && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px]">💰</span>
+                          <span className="text-xs font-bold text-emerald-600">
+                            ${Number(load.rate).toLocaleString("en-US")}
+                          </span>
+                        </div>
+                      )}
+
                     </div>
-
-                    {/* Delivery */}
-                    <div className="flex gap-1.5">
-                      <span className="text-[10px] mt-0.5">🚚</span>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide leading-none mb-0.5">Delivery</p>
-                        <p className="text-xs text-gray-600 truncate font-medium">{load.companyDelivery}</p>
-                        <p className="text-[11px] text-gray-400 truncate">{load.addressDelivery}, {load.cityDelivery}</p>
-                        <p className="text-[11px] text-gray-400">{fmt(load.dateDelivery)}</p>
-                      </div>
-                    </div>
-
-                    {/* Rate */}
-                    {load.rate != null && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px]">💰</span>
-                        <span className="text-xs font-bold text-emerald-600">
-                          ${Number(load.rate).toLocaleString("en-US")}
-                        </span>
-                      </div>
-                    )}
-
-                  </div>
+                  )}
                 </div>
               );
             })
@@ -597,37 +687,46 @@ export const Loads = () => {
           onLoad={handleMapLoad}
           options={MAP_OPTIONS}
         >
-          {loadsWithLocation.map(load => {
-            const isSelected = selectedId === load._id;
-            const label = getUnitLabel(load);
+          {/* Always show ALL drivers with a known location */}
+          {usersWithLocation.map(user => {
+            // Find an active (non-completed) load for this driver
+            const userLoad = loads.find(
+              l => l.user?._id === user._id && l.state !== "completed"
+            );
+            const isSelected = userLoad ? selectedId === userLoad._id : false;
+            const unitLabel = user.unitNumber || user.vehicle || user.name || "—";
             const bg = isSelected ? "#2563eb" : "#1e293b";
+
             return (
               <OverlayView
-                key={load._id}
-                position={{ lat: Number(load.user.lat), lng: Number(load.user.lon) }}
+                key={user._id}
+                position={{ lat: Number(user.lat), lng: Number(user.lon) }}
                 mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
               >
                 <div
-                  onClick={() => handleSelectLoad(load)}
-                  className="cursor-pointer select-none inline-block"
+                  onClick={() => userLoad && handleSelectLoad(userLoad)}
+                  className={`select-none inline-block ${userLoad ? "cursor-pointer" : "cursor-default"}`}
                   style={{
                     transform: "translate(-50%, calc(-100% - 6px))",
-                    filter: isSelected ? "drop-shadow(0 2px 6px rgba(37,99,235,0.5))" : "drop-shadow(0 1px 3px rgba(0,0,0,0.4))",
+                    filter: isSelected
+                      ? "drop-shadow(0 2px 6px rgba(37,99,235,0.5))"
+                      : "drop-shadow(0 1px 3px rgba(0,0,0,0.4))",
                   }}
                 >
-                  {/* Label bubble */}
+                  {/* Label bubble — compact: unit number only */}
                   <div style={{
                     backgroundColor: bg,
                     color: "white",
-                    fontSize: "11px",
+                    fontSize: isSelected ? "11px" : "10px",
                     fontWeight: "700",
-                    padding: "4px 10px",
+                    padding: isSelected ? "4px 10px" : "3px 7px",
                     borderRadius: "6px",
                     whiteSpace: "nowrap",
                     letterSpacing: "0.02em",
                     fontFamily: "system-ui, sans-serif",
+                    opacity: userLoad ? 1 : 0.7,
                   }}>
-                    {label}
+                    {unitLabel}
                   </div>
                   {/* Arrow */}
                   <div style={{
@@ -637,16 +736,18 @@ export const Loads = () => {
                     borderRight: "5px solid transparent",
                     borderTop: `6px solid ${bg}`,
                     margin: "0 auto",
+                    opacity: userLoad ? 1 : 0.7,
                   }} />
                   {/* Pin dot */}
                   <div style={{
-                    width: "8px",
-                    height: "8px",
+                    width: isSelected ? "8px" : "6px",
+                    height: isSelected ? "8px" : "6px",
                     borderRadius: "50%",
                     backgroundColor: bg,
                     border: "2px solid white",
                     margin: "0 auto",
                     marginTop: "-1px",
+                    opacity: userLoad ? 1 : 0.7,
                   }} />
                 </div>
               </OverlayView>
