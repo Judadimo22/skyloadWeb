@@ -1,19 +1,41 @@
 import { useState } from "react";
-import { LogOut, Map, Users, Search } from "lucide-react";
+import { jwtDecode } from "jwt-decode";
+import { LogOut, Map, Users, Search, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UsersList } from "../Users/Users";
 import { Loads } from "../Loads/Loads";
+import { AdminsPanel } from "../Admins/Admins";
 
-const NAV_ITEMS = [
-  { id: "cargas",   label: "Live Map",      icon: Map   },
-  { id: "usuarios", label: "Drivers",       icon: Users },
+const SUPERADMIN_EMAILS = [
+  "diazmorenodavid16@gmail.com",
+  "vlad.k@southpointegroup.net",
 ];
+
+function getCurrentEmail() {
+  try {
+    const token = localStorage.getItem("loginToken");
+    if (!token) return "";
+    const decoded = jwtDecode(token);
+    return decoded.email || "";
+  } catch {
+    return "";
+  }
+}
 
 export const Home = () => {
 
   const [section, setSection] = useState("cargas");
   const [unitFilter, setUnitFilter] = useState("");
   const navigate = useNavigate();
+
+  const currentEmail = getCurrentEmail();
+  const isSuperAdmin = SUPERADMIN_EMAILS.includes(currentEmail);
+
+  const NAV_ITEMS = [
+    { id: "cargas",   label: "Live Map", icon: Map   },
+    { id: "usuarios", label: "Drivers",  icon: Users },
+    ...(isSuperAdmin ? [{ id: "admins", label: "Admins", icon: ShieldCheck }] : []),
+  ];
 
   const logout = () => {
     localStorage.removeItem("loginToken");
@@ -35,7 +57,9 @@ export const Home = () => {
             </div>
             <div>
               <h1 className="text-sm font-bold text-white leading-tight">Fleetpoint 360</h1>
-              <p className="text-xs text-slate-500 leading-tight">Admin Panel</p>
+              <p className="text-xs text-slate-500 leading-tight">
+                {isSuperAdmin ? "Super Admin" : "Admin Panel"}
+              </p>
             </div>
           </div>
         </div>
@@ -64,6 +88,16 @@ export const Home = () => {
 
         </nav>
 
+        {/* Current user */}
+        {currentEmail && (
+          <div className="px-4 py-3 border-t border-slate-800">
+            <p className="text-[10px] text-slate-600 truncate">{currentEmail}</p>
+            {isSuperAdmin && (
+              <p className="text-[10px] text-blue-400 font-semibold mt-0.5">Super Admin</p>
+            )}
+          </div>
+        )}
+
         {/* Logout */}
         <div className="px-3 py-4 border-t border-slate-800">
           <button
@@ -84,6 +118,24 @@ export const Home = () => {
           <Loads />
         </main>
 
+      ) : section === "admins" && isSuperAdmin ? (
+
+        <main className="flex-1 overflow-auto bg-gray-50">
+          <div className="bg-white border-b px-8 py-5 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Administrators</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Create and manage admin accounts</p>
+            </div>
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
+              <ShieldCheck size={13} className="text-blue-500" />
+              <span className="text-xs font-semibold text-blue-600">Super Admin</span>
+            </div>
+          </div>
+          <div className="p-8">
+            <AdminsPanel currentEmail={currentEmail} />
+          </div>
+        </main>
+
       ) : (
 
         <main className="flex-1 overflow-auto bg-white">
@@ -101,7 +153,7 @@ export const Home = () => {
           </div>
 
           <div className="p-8">
-            <div className="bg-white rounded-xl ">
+            <div className="bg-white rounded-xl">
 
               {/* Search bar */}
               <div className="px-6 py-4 border-b border-gray-100">
