@@ -50,6 +50,7 @@ export const Loads = () => {
   const [filter, setFilter] = useState("all");
   const [unitSearch, setUnitSearch] = useState("");
   const mapRef = useRef(null);
+  const hasFitOnce = useRef(false);
   const [editLoad, setEditLoad] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
@@ -663,7 +664,7 @@ export const Loads = () => {
             <p className="font-semibold truncate">{getUnitLabel(selectedLoad)}</p>
             {selectedLoad.user?.lat && (
               <p className="text-blue-500 mt-0.5">
-                {Number(selectedLoad.user.lat).toFixed(5)}, {Number(selectedLoad.user.lon).toFixed(5)}
+                {selectedLoad.speed ?? ''} Km/h
               </p>
             )}
           </div>

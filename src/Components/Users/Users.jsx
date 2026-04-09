@@ -20,6 +20,8 @@ const EMPTY_FORM = {
   cityDelivery: "",
   noteDelivery: "",
   rate: "",
+  notePickUp: "",
+  noteDelivery: ""
 };
 
 const AssignLoadModal = ({ user, onClose, onSuccess }) => {
@@ -157,6 +159,17 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
                   <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder="Instructions for pickup..." rows={2} className={inputClass + " resize-none"} />
                 </div>
               </div>
+              <div className="mt-3">
+                <label className={labelClass}>Notes</label>
+                <textarea
+                  name="notePickUp"
+                  value={form.notePickUp}
+                  onChange={handleChange}
+                  placeholder="Additional pickup instructions..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                />
+              </div>
             </div>
 
             {/* Delivery section */}
@@ -187,6 +200,17 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
                   <label className={labelClass}>Note for driver (delivery)</label>
                   <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder="Instructions for delivery..." rows={2} className={inputClass + " resize-none"} />
                 </div>
+              </div>
+              <div className="mt-3">
+                <label className={labelClass}>Notes</label>
+                <textarea
+                  name="noteDelivery"
+                  value={form.noteDelivery}
+                  onChange={handleChange}
+                  placeholder="Additional delivery instructions..."
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition resize-none"
+                />
               </div>
             </div>
 

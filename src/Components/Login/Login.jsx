@@ -67,11 +67,11 @@ export default function Login() {
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 rounded-full px-4 py-1.5 mb-6">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-            <span className="text-blue-300 text-xs font-semibold uppercase tracking-widest">Fleet Management Platform</span>
+            <span className="text-blue-300 text-xs font-semibold uppercase tracking-widest">Fleet Point 360 Platform</span>
           </div>
 
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Real-time fleet<br />
+            Fleet Point 360<br />
             <span className="text-blue-400">management</span>
           </h1>
 
