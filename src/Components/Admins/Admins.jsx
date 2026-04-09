@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Mail, ShieldCheck, Trash2, Pencil, UserPlus, X } from "lucide-react";
+import { Eye, EyeOff, Mail, ShieldCheck, Trash2, Pencil, UserPlus, X, User } from "lucide-react";
 import Swal from "sweetalert2";
 import { backendBaseUrl } from "../../utils/funciones";
 
@@ -18,7 +18,7 @@ const authHeaders = () => ({
 /* ─── Create Admin Modal ────────────────────────────────── */
 
 const CreateAdminModal = ({ onClose, onSuccess }) => {
-  const [form, setForm] = useState({ email: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ name: "", lastName: "", email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +27,7 @@ const CreateAdminModal = ({ onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password || !form.confirmPassword) {
-      Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
+      Swal.fire({ icon: "warning", title: "Missing fields", text: "Email and password are required", confirmButtonColor: "#2563eb" });
       return;
     }
     if (form.password !== form.confirmPassword) {
@@ -39,7 +39,12 @@ const CreateAdminModal = ({ onClose, onSuccess }) => {
       const res = await fetch(`${backendBaseUrl}/admin`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ email: form.email, password: form.password }),
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          name: form.name,
+          lastName: form.lastName,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -72,6 +77,32 @@ const CreateAdminModal = ({ onClose, onSuccess }) => {
         {/* Body */}
         <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col">
           <div className="px-6 py-5 space-y-4">
+
+            {/* Name row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>First Name</label>
+                <div className="relative">
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text" name="name" value={form.name} onChange={handleChange}
+                    placeholder="John"
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Last Name</label>
+                <div className="relative">
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text" name="lastName" value={form.lastName} onChange={handleChange}
+                    placeholder="Doe"
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+            </div>
 
             <div>
               <label className={labelClass}>Email</label>
@@ -136,7 +167,13 @@ const CreateAdminModal = ({ onClose, onSuccess }) => {
 /* ─── Edit Admin Modal ──────────────────────────────────── */
 
 const EditAdminModal = ({ admin, onClose, onSuccess }) => {
-  const [form, setForm] = useState({ email: admin.email || "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({
+    name: admin.name || "",
+    lastName: admin.lastName || "",
+    email: admin.email || "",
+    password: "",
+    confirmPassword: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -152,7 +189,7 @@ const EditAdminModal = ({ admin, onClose, onSuccess }) => {
       Swal.fire({ icon: "warning", title: "Passwords do not match", confirmButtonColor: "#2563eb" });
       return;
     }
-    const body = { email: form.email };
+    const body = { email: form.email, name: form.name, lastName: form.lastName };
     if (form.password) body.password = form.password;
 
     try {
@@ -195,6 +232,32 @@ const EditAdminModal = ({ admin, onClose, onSuccess }) => {
         {/* Body */}
         <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col">
           <div className="px-6 py-5 space-y-4">
+
+            {/* Name row */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>First Name</label>
+                <div className="relative">
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text" name="name" value={form.name} onChange={handleChange}
+                    placeholder="John"
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Last Name</label>
+                <div className="relative">
+                  <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text" name="lastName" value={form.lastName} onChange={handleChange}
+                    placeholder="Doe"
+                    className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+            </div>
 
             <div>
               <label className={labelClass}>Email</label>
@@ -295,7 +358,7 @@ export const AdminsPanel = ({ currentEmail }) => {
     });
     if (!result.isConfirmed) return;
     try {
-      const res = await fetch(`${backendBaseUrl}/admin/${admin._id}`, {
+      const res = await fetch(`${backendBaseUrl}/deleteAdmin/${admin._id}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
@@ -311,8 +374,17 @@ export const AdminsPanel = ({ currentEmail }) => {
     }
   };
 
-  // Sort A-Z by email
-  const sortedAdmins = [...admins].sort((a, b) => (a.email || "").localeCompare(b.email || ""));
+  const SUPERADMIN_EMAILS = import.meta.env.VITE_SUPERADMIN_EMAILS?.split(",") ?? [];
+
+  const superAdmins = admins
+    .filter(a => SUPERADMIN_EMAILS.includes(a.email))
+    .sort((a, b) => (a.email || "").localeCompare(b.email || ""));
+
+  const regularAdmins = admins
+    .filter(a => !SUPERADMIN_EMAILS.includes(a.email))
+    .sort((a, b) => (a.email || "").localeCompare(b.email || ""));
+
+  const sortedAdmins = [...superAdmins, ...regularAdmins];
 
   return (
     <div className="space-y-6">
@@ -364,16 +436,44 @@ export const AdminsPanel = ({ currentEmail }) => {
           <table className="min-w-full">
             <thead className="bg-gray-50 border-b">
               <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">
+                <th className="px-6 py-3">Name</th>
                 <th className="px-6 py-3">Email</th>
                 <th className="px-6 py-3">Role</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {sortedAdmins.map((admin) => {
+              {sortedAdmins.map((admin, index) => {
                 const isSelf = admin.email === currentEmail;
+                const isSuperAdmin = SUPERADMIN_EMAILS.includes(admin.email);
+                const fullName = [admin.name, admin.lastName].filter(Boolean).join(" ");
+                // Insert section headers
+                const isFirstSuperAdmin = index === 0;
+                const isFirstRegularAdmin = index === superAdmins.length && regularAdmins.length > 0;
                 return (
+                  <>
+                    {isFirstSuperAdmin && (
+                      <tr key="header-super">
+                        <td colSpan={4} className="px-6 pt-4 pb-1">
+                          <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Super Admins</span>
+                        </td>
+                      </tr>
+                    )}
+                    {isFirstRegularAdmin && (
+                      <tr key="header-admin">
+                        <td colSpan={4} className="px-6 pt-5 pb-1 border-t-2 border-gray-100">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admins</span>
+                        </td>
+                      </tr>
+                    )}
                   <tr key={admin._id} className="border-b last:border-none hover:bg-gray-50 transition">
+                    <td className="px-6 py-4">
+                      {fullName ? (
+                        <span className="text-sm font-medium text-gray-800">{fullName}</span>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">—</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <span className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-medium">
@@ -385,9 +485,15 @@ export const AdminsPanel = ({ currentEmail }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold">
-                        Admin
-                      </span>
+                      {isSuperAdmin ? (
+                        <span className="bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1 rounded-full text-xs font-semibold">
+                          Super Admin
+                        </span>
+                      ) : (
+                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1 rounded-full text-xs font-semibold">
+                          Admin
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 justify-end">
@@ -410,6 +516,7 @@ export const AdminsPanel = ({ currentEmail }) => {
                       </div>
                     </td>
                   </tr>
+                  </>
                 );
               })}
             </tbody>

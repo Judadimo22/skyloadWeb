@@ -6,10 +6,7 @@ import { UsersList } from "../Users/Users";
 import { Loads } from "../Loads/Loads";
 import { AdminsPanel } from "../Admins/Admins";
 
-const SUPERADMIN_EMAILS = [
-  "diazmorenodavid16@gmail.com",
-  "vlad.k@southpointegroup.net",
-];
+const SUPERADMIN_EMAILS = import.meta.env.VITE_SUPERADMIN_EMAILS?.split(",") ?? [];
 
 function getCurrentEmail() {
   try {
