@@ -359,7 +359,7 @@ export const AdminsPanel = ({ currentEmail }) => {
     if (!result.isConfirmed) return;
     try {
       const res = await fetch(`${backendBaseUrl}/deleteAdmin/${admin._id}`, {
-        method: "DELETE",
+        method: "POST",
         headers: authHeaders(),
       });
       if (res.ok) {
