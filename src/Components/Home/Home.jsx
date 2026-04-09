@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { UsersList } from "../Users/Users";
 import { Loads } from "../Loads/Loads";
 import { AdminsPanel } from "../Admins/Admins";
+import { Logo } from "../Logo/Logo";
 
 const SUPERADMIN_EMAILS = import.meta.env.VITE_SUPERADMIN_EMAILS?.split(",") ?? [];
 
@@ -49,8 +50,8 @@ export const Home = () => {
         {/* Logo */}
         <div className="px-5 py-5 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/30">
-              <Map size={15} className="text-white" />
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-600/30">
+              <Logo w={30} h={30}/>
             </div>
             <div>
               <h1 className="text-sm font-bold text-white leading-tight">Fleetpoint 360</h1>
