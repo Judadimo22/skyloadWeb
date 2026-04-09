@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../../redux/actions/adminActions";
 import { AlertCircle, Eye, EyeOff, Mail, MapPin, Package, Truck, Users } from "lucide-react";
-import  logoSencillo  from '../../assets/logoApp.png'
+import { Logo } from "../Logo/Logo";
 
 const FEATURES = [
   { icon: MapPin,   text: "Live GPS tracking for all drivers" },
@@ -57,12 +57,10 @@ export default function Login() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 relative z-10">
-          <div className="w-25 h-25 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30 px-2">
-          <img src="" alt="" />
-          <img src={logoSencillo} alt="" />
-            <Truck size={20} className="text-white" />
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+            <Logo/>
           </div>
-          <span className="text-xl font-bold text-white tracking-tight">Fleet Point 360 Admin</span>
+          <span className="text-xl font-bold text-white tracking-tight">Fleetpoint 360 Admin</span>
         </div>
 
         {/* Hero */}
@@ -95,7 +93,7 @@ export default function Login() {
 
         {/* Footer */}
         <p className="text-slate-600 text-xs relative z-10">
-          © {new Date().getFullYear()} Skyload. All rights reserved.
+          © {new Date().getFullYear()} Fleetpoint 360. All rights reserved.
         </p>
 
       </div>
@@ -107,10 +105,10 @@ export default function Login() {
 
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Truck size={15} className="text-white" />
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <Logo/>
             </div>
-            <span className="text-lg font-bold text-gray-800">Skyload Admin</span>
+            <span className="text-lg font-bold text-gray-800">Fleetpoint 360 Admin</span>
           </div>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
@@ -136,7 +134,7 @@ export default function Login() {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="admin@skyload.com"
+                  placeholder="admin@Fleetpoint 360.com"
                   className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
               </div>
@@ -180,7 +178,7 @@ export default function Login() {
           </form>
 
           <p className="text-xs text-center text-gray-400 mt-8">
-            © {new Date().getFullYear()} Skyload · Admin Panel
+            © {new Date().getFullYear()} Fleetpoint 360 · Admin Panel
           </p>
 
         </div>
