@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Mail, Truck, User, UserPlus, X } from "lucide-react";
+import { Eye, EyeOff, Link, Mail, Truck, User, UserPlus, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUsers } from "../../redux/actions/adminActions";
 import { registerUser } from "../../redux/actions/usersActions";
@@ -20,8 +20,6 @@ const EMPTY_FORM = {
   cityDelivery: "",
   noteDelivery: "",
   rate: "",
-  notePickUp: "",
-  noteDelivery: ""
 };
 
 const AssignLoadModal = ({ user, onClose, onSuccess }) => {
@@ -556,12 +554,34 @@ export const UsersList = ({ unitFilter = "" }) => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      onClick={() => setAssignUser(user)}
-                      className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition text-xs font-semibold"
-                    >
-                      Assign Load
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setAssignUser(user)}
+                        className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition text-xs font-semibold"
+                      >
+                        Assign Load
+                      </button>
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/track/${user._id}`;
+                          navigator.clipboard.writeText(url).then(() => {
+                            Swal.fire({
+                              icon: "success",
+                              title: "Link copied!",
+                              text: "Share this link to track the driver's live location.",
+                              confirmButtonColor: "#2563eb",
+                              timer: 2500,
+                              showConfirmButton: false,
+                            });
+                          });
+                        }}
+                        className="flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition text-xs font-semibold border border-gray-200"
+                        title="Copy tracking link"
+                      >
+                        <Link size={12} />
+                        Track
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
