@@ -2,7 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import { backendBaseUrl } from "../../utils/funciones";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import Swal from "sweetalert2";
-import { X } from "lucide-react";
+import { Link, X } from "lucide-react";
+
+const copyTrackLink = (userId) => {
+  const url = `${window.location.origin}/track/${userId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    Swal.fire({
+      icon: "success",
+      title: "Link copied!",
+      text: "Share this link to track the driver's live location.",
+      confirmButtonColor: "#2563eb",
+      timer: 2500,
+      showConfirmButton: false,
+    });
+  });
+};
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.35 };
 const DEFAULT_ZOOM = 4;
@@ -579,6 +593,16 @@ export const Loads = () => {
                           {toMph(load.user.speed)} MPH
                         </span>
                       )}
+                      {load.user?._id && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); copyTrackLink(load.user._id); }}
+                          className="flex items-center gap-1 p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                          title="Copy tracking link"
+                        >
+                          <Link size={13} />
+                          <span className="text-[11px] font-semibold">Track</span>
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditLoad(load); }}
                         className="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
@@ -714,20 +738,51 @@ export const Loads = () => {
                       : "drop-shadow(0 1px 3px rgba(0,0,0,0.4))",
                   }}
                 >
-                  {/* Label bubble — compact: unit number only */}
+                  {/* Label bubble — unit number + track icon */}
                   <div style={{
                     backgroundColor: bg,
                     color: "white",
                     fontSize: isSelected ? "11px" : "10px",
                     fontWeight: "700",
-                    padding: isSelected ? "4px 10px" : "3px 7px",
+                    padding: isSelected ? "4px 8px" : "3px 6px",
                     borderRadius: "6px",
                     whiteSpace: "nowrap",
                     letterSpacing: "0.02em",
                     fontFamily: "system-ui, sans-serif",
                     opacity: userLoad ? 1 : 0.7,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
                   }}>
-                    {unitLabel}
+                    <span>{unitLabel}</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); copyTrackLink(user._id); }}
+                      title="Copy tracking link"
+                      style={{
+                        background: "rgba(255,255,255,0.20)",
+                        border: "none",
+                        borderRadius: "3px",
+                        cursor: "pointer",
+                        padding: "1px 3px",
+                        lineHeight: 0,
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <svg
+                        width={isSelected ? "10" : "9"}
+                        height={isSelected ? "10" : "9"}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
+                    </button>
                   </div>
                   {/* Arrow */}
                   <div style={{
