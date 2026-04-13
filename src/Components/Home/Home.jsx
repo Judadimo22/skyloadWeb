@@ -6,6 +6,8 @@ import { UsersList } from "../Users/Users";
 import { Loads } from "../Loads/Loads";
 import { AdminsPanel } from "../Admins/Admins";
 import { Logo } from "../Logo/Logo";
+import { LanguageSwitch } from "../LanguageSwitch";
+import { useLanguage } from "../../context/LanguageContext";
 
 const SUPERADMIN_EMAILS = import.meta.env.VITE_SUPERADMIN_EMAILS?.split(",") ?? [];
 
@@ -25,14 +27,15 @@ export const Home = () => {
   const [section, setSection] = useState("cargas");
   const [unitFilter, setUnitFilter] = useState("");
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const currentEmail = getCurrentEmail();
   const isSuperAdmin = SUPERADMIN_EMAILS.includes(currentEmail);
 
   const NAV_ITEMS = [
-    { id: "cargas",   label: "Live Map", icon: Map   },
-    { id: "usuarios", label: "Drivers",  icon: Users },
-    ...(isSuperAdmin ? [{ id: "admins", label: "Admins", icon: ShieldCheck }] : []),
+    { id: "cargas",   label: t("nav_live_map"), icon: Map   },
+    { id: "usuarios", label: t("nav_drivers"),  icon: Users },
+    ...(isSuperAdmin ? [{ id: "admins", label: t("nav_admins"), icon: ShieldCheck }] : []),
   ];
 
   const logout = () => {
@@ -56,7 +59,7 @@ export const Home = () => {
             <div>
               <h1 className="text-sm font-bold text-white leading-tight">Fleetpoint 360</h1>
               <p className="text-xs text-slate-500 leading-tight">
-                {isSuperAdmin ? "Super Admin" : "Admin Panel"}
+                {isSuperAdmin ? t("role_super_admin") : t("role_admin_panel")}
               </p>
             </div>
           </div>
@@ -66,7 +69,7 @@ export const Home = () => {
         <nav className="flex-1 px-3 pt-4 pb-2 space-y-0.5">
 
           <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2.5">
-            Navigation
+            {t("nav_section")}
           </p>
 
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
@@ -86,12 +89,17 @@ export const Home = () => {
 
         </nav>
 
+        {/* Language switch */}
+        <div className="px-3 pb-3 border-t border-slate-800 pt-3">
+          <LanguageSwitch />
+        </div>
+
         {/* Current user */}
         {currentEmail && (
           <div className="px-4 py-3 border-t border-slate-800">
             <p className="text-[10px] text-slate-600 truncate">{currentEmail}</p>
             {isSuperAdmin && (
-              <p className="text-[10px] text-blue-400 font-semibold mt-0.5">Super Admin</p>
+              <p className="text-[10px] text-blue-400 font-semibold mt-0.5">{t("role_super_admin")}</p>
             )}
           </div>
         )}
@@ -103,7 +111,7 @@ export const Home = () => {
             className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-all font-medium"
           >
             <LogOut size={15} />
-            Logout
+            {t("nav_logout")}
           </button>
         </div>
 
@@ -121,12 +129,12 @@ export const Home = () => {
         <main className="flex-1 overflow-auto bg-gray-50">
           <div className="bg-white border-b px-8 py-5 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Administrators</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Create and manage admin accounts</p>
+              <h2 className="text-lg font-bold text-gray-900">{t("page_admins_title")}</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{t("page_admins_subtitle")}</p>
             </div>
             <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
               <ShieldCheck size={13} className="text-blue-500" />
-              <span className="text-xs font-semibold text-blue-600">Super Admin</span>
+              <span className="text-xs font-semibold text-blue-600">{t("role_super_admin")}</span>
             </div>
           </div>
           <div className="p-8">
@@ -141,12 +149,12 @@ export const Home = () => {
           {/* Page header */}
           <div className="bg-white border-b px-8 py-5 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Drivers</h2>
-              <p className="text-xs text-gray-500 mt-0.5">Manage your fleet drivers and assign loads</p>
+              <h2 className="text-lg font-bold text-gray-900">{t("page_drivers_title")}</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{t("page_drivers_subtitle")}</p>
             </div>
             <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5">
               <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span className="text-xs font-semibold text-blue-600">Fleet Active</span>
+              <span className="text-xs font-semibold text-blue-600">{t("page_drivers_fleet_active")}</span>
             </div>
           </div>
 
@@ -159,7 +167,7 @@ export const Home = () => {
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Search by unit number..."
+                    placeholder={t("search_by_unit")}
                     value={unitFilter}
                     onChange={(e) => setUnitFilter(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"

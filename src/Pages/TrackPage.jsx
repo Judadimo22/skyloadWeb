@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { backendBaseUrl } from "../utils/funciones";
+import { useLanguage } from "../context/LanguageContext";
+import { LanguageSwitch } from "../Components/LanguageSwitch";
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.35 };
 const DEFAULT_ZOOM = 4;
@@ -25,6 +27,7 @@ const toMph = (kmh) => Math.round(kmh * 0.621371);
 
 export const TrackPage = () => {
   const { driverId } = useParams();
+  const { t } = useLanguage();
   const [driver, setDriver] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const mapRef = useRef(null);
@@ -75,8 +78,8 @@ export const TrackPage = () => {
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-5xl mb-4">🔍</div>
-          <h1 className="text-xl font-bold text-gray-700 mb-2">Driver not found</h1>
-          <p className="text-sm text-gray-400">This tracking link may be invalid or expired.</p>
+          <h1 className="text-xl font-bold text-gray-700 mb-2">{t("track_not_found_title")}</h1>
+          <p className="text-sm text-gray-400">{t("track_not_found_text")}</p>
         </div>
       </div>
     );
@@ -107,23 +110,28 @@ export const TrackPage = () => {
               <p className="text-xs text-gray-400">
                 {hasLocation ? (
                   <>
-                    Live location
+                    {t("track_live")}
                     {driver.speed != null && (
                       <span className="ml-2 font-semibold text-green-600">{toMph(driver.speed)} MPH</span>
                     )}
                   </>
                 ) : (
-                  "Waiting for location..."
+                  t("track_waiting")
                 )}
               </p>
             </>
           ) : (
-            <p className="text-sm text-gray-400">Loading driver info...</p>
+            <p className="text-sm text-gray-400">{t("track_loading_driver")}</p>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className={`w-2 h-2 rounded-full ${hasLocation ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-          <span className="text-xs text-gray-400">{hasLocation ? "Live" : "No signal"}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${hasLocation ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
+            <span className="text-xs text-gray-400">{hasLocation ? t("track_live_label") : t("track_no_signal")}</span>
+          </div>
+          <div className="bg-white rounded-lg px-1 py-0.5">
+            <LanguageSwitch mode="light" />
+          </div>
         </div>
       </div>
 
@@ -190,7 +198,7 @@ export const TrackPage = () => {
           </GoogleMap>
         ) : (
           <div className="h-full flex items-center justify-center bg-gray-100">
-            <p className="text-gray-400 text-sm">Loading map...</p>
+            <p className="text-gray-400 text-sm">{t("track_loading_map")}</p>
           </div>
         )}
       </div>

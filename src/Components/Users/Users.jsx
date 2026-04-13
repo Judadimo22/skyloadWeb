@@ -5,6 +5,7 @@ import { getUsers } from "../../redux/actions/adminActions";
 import { registerUser } from "../../redux/actions/usersActions";
 import Swal from "sweetalert2";
 import { backendBaseUrl } from "../../utils/funciones";
+import { useLanguage } from "../../context/LanguageContext";
 
 /* ─── Assign Load Modal ─────────────────────────────── */
 
@@ -23,40 +24,34 @@ const EMPTY_FORM = {
 };
 
 const AssignLoadModal = ({ user, onClose, onSuccess }) => {
-
+  const { t } = useLanguage();
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === "rate") {
       const digits = value.replace(/\D/g, "");
       const formatted = digits ? `$${Number(digits).toLocaleString("en-US")}` : "";
       setForm(f => ({ ...f, rate: formatted }));
       return;
     }
-
     setForm(f => ({ ...f, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
-
     const { datePickUp, companyNamePickUp, addressPickup, cityPickUp,
             dateDelivery, companyDelivery, addressDelivery, cityDelivery, rate } = form;
 
     if (!datePickUp || !companyNamePickUp || !addressPickup || !cityPickUp ||
         !dateDelivery || !companyDelivery || !addressDelivery || !cityDelivery || !rate) {
-      Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
+      Swal.fire({ icon: "warning", title: t("common_missing_fields"), text: t("assign_load_error_missing"), confirmButtonColor: "#2563eb" });
       return;
     }
 
     try {
-
       setLoading(true);
-
       const response = await fetch(`${backendBaseUrl}/asignLoad`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,31 +66,23 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
           user: user._id,
         }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         onClose();
         Swal.fire({
           icon: "success",
-          title: "Load created",
-          text: "The load was assigned successfully",
+          title: t("assign_load_success_title"),
+          text: t("assign_load_success_text"),
           confirmButtonColor: "#2563eb",
         }).then(() => window.location.reload());
       } else {
-        Swal.fire({ icon: "error", title: "Error", text: data.message || "The load could not be created", confirmButtonColor: "#2563eb" });
+        Swal.fire({ icon: "error", title: t("common_error"), text: data.message || t("assign_load_error_failed"), confirmButtonColor: "#2563eb" });
       }
-
     } catch {
-
-      Swal.fire({ icon: "error", title: "Server error", text: "Please try again", confirmButtonColor: "#2563eb" });
-
+      Swal.fire({ icon: "error", title: t("common_server_error"), text: t("common_try_again"), confirmButtonColor: "#2563eb" });
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
   const inputClass = "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition";
@@ -106,13 +93,12 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="bg-blue-600 px-6 py-5 flex items-start justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white">Assign Load</h2>
+            <h2 className="text-xl font-bold text-white">{t("assign_load_title")}</h2>
             <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 mt-2">
               <div className="w-5 h-5 bg-white/30 rounded-full flex items-center justify-center text-xs">👤</div>
               <span className="text-sm font-semibold text-white">{user.name} {user.lastName}</span>
@@ -125,45 +111,44 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-
           <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
             {/* Pickup section */}
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">📍</span>
-                <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Pickup</span>
+                <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">{t("assign_load_pickup")}</span>
                 <div className="flex-1 h-px bg-blue-100" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelClass}>Date</label>
+                  <label className={labelClass}>{t("assign_load_date")}</label>
                   <input type="datetime-local" name="datePickUp" value={form.datePickUp} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Company</label>
-                  <input type="text" name="companyNamePickUp" value={form.companyNamePickUp} onChange={handleChange} placeholder="Company name" className={inputClass} />
+                  <label className={labelClass}>{t("assign_load_company")}</label>
+                  <input type="text" name="companyNamePickUp" value={form.companyNamePickUp} onChange={handleChange} placeholder={t("assign_load_placeholder_company")} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Address</label>
-                  <input type="text" name="addressPickup" value={form.addressPickup} onChange={handleChange} placeholder="Street address" className={inputClass} />
+                  <label className={labelClass}>{t("assign_load_address")}</label>
+                  <input type="text" name="addressPickup" value={form.addressPickup} onChange={handleChange} placeholder={t("assign_load_placeholder_address")} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>City</label>
-                  <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder="City" className={inputClass} />
+                  <label className={labelClass}>{t("assign_load_city")}</label>
+                  <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder={t("assign_load_placeholder_city")} className={inputClass} />
                 </div>
                 <div className="col-span-2">
-                  <label className={labelClass}>Note for driver (pickup)</label>
-                  <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder="Instructions for pickup..." rows={2} className={inputClass + " resize-none"} />
+                  <label className={labelClass}>{t("assign_load_note_pickup")}</label>
+                  <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder={t("assign_load_placeholder_pickup_notes")} rows={2} className={inputClass + " resize-none"} />
                 </div>
               </div>
               <div className="mt-3">
-                <label className={labelClass}>Notes</label>
+                <label className={labelClass}>{t("assign_load_notes")}</label>
                 <textarea
                   name="notePickUp"
                   value={form.notePickUp}
                   onChange={handleChange}
-                  placeholder="Additional pickup instructions..."
+                  placeholder={t("assign_load_placeholder_pickup_notes")}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
                 />
@@ -174,38 +159,38 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">🚚</span>
-                <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">Delivery</span>
+                <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">{t("assign_load_delivery")}</span>
                 <div className="flex-1 h-px bg-cyan-100" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelClass}>Date</label>
+                  <label className={labelClass}>{t("assign_load_date")}</label>
                   <input type="datetime-local" name="dateDelivery" value={form.dateDelivery} onChange={handleChange} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Company</label>
-                  <input type="text" name="companyDelivery" value={form.companyDelivery} onChange={handleChange} placeholder="Company name" className={inputClass} />
+                  <label className={labelClass}>{t("assign_load_company")}</label>
+                  <input type="text" name="companyDelivery" value={form.companyDelivery} onChange={handleChange} placeholder={t("assign_load_placeholder_company")} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>Address</label>
-                  <input type="text" name="addressDelivery" value={form.addressDelivery} onChange={handleChange} placeholder="Street address" className={inputClass} />
+                  <label className={labelClass}>{t("assign_load_address")}</label>
+                  <input type="text" name="addressDelivery" value={form.addressDelivery} onChange={handleChange} placeholder={t("assign_load_placeholder_address")} className={inputClass} />
                 </div>
                 <div>
-                  <label className={labelClass}>City</label>
-                  <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder="City" className={inputClass} />
+                  <label className={labelClass}>{t("assign_load_city")}</label>
+                  <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder={t("assign_load_placeholder_city")} className={inputClass} />
                 </div>
                 <div className="col-span-2">
-                  <label className={labelClass}>Note for driver (delivery)</label>
-                  <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder="Instructions for delivery..." rows={2} className={inputClass + " resize-none"} />
+                  <label className={labelClass}>{t("assign_load_note_delivery")}</label>
+                  <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder={t("assign_load_placeholder_delivery_notes")} rows={2} className={inputClass + " resize-none"} />
                 </div>
               </div>
               <div className="mt-3">
-                <label className={labelClass}>Notes</label>
+                <label className={labelClass}>{t("assign_load_notes")}</label>
                 <textarea
                   name="noteDelivery"
                   value={form.noteDelivery}
                   onChange={handleChange}
-                  placeholder="Additional delivery instructions..."
+                  placeholder={t("assign_load_placeholder_delivery_notes")}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition resize-none"
                 />
@@ -216,17 +201,13 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">💰</span>
-                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Rate</span>
+                <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">{t("assign_load_rate")}</span>
                 <div className="flex-1 h-px bg-emerald-100" />
               </div>
               <div className="max-w-[200px]">
-                <label className={labelClass}>Amount</label>
+                <label className={labelClass}>{t("assign_load_amount")}</label>
                 <input
-                  type="text"
-                  name="rate"
-                  value={form.rate}
-                  onChange={handleChange}
-                  placeholder="$0"
+                  type="text" name="rate" value={form.rate} onChange={handleChange} placeholder="$0"
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition font-semibold text-emerald-700"
                 />
               </div>
@@ -236,38 +217,27 @@ const AssignLoadModal = ({ user, onClose, onSuccess }) => {
 
           {/* Footer */}
           <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium"
-            >
-              Cancel
+            <button type="button" onClick={onClose} className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium">
+              {t("assign_load_cancel")}
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-            >
+            <button type="submit" disabled={loading} className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
               {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {loading ? "Creating..." : "Create Load"}
+              {loading ? t("assign_load_submitting") : t("assign_load_submit")}
             </button>
           </div>
-
         </form>
 
       </div>
-
     </div>
   );
-
 };
 
 /* ─── Register Driver Modal ─────────────────────────── */
 
-const EMPTY_REGISTER = { name: "", lastName: "", email: "", password: "", vehicle: "" , vehicleDimension:"", unitNumber: "", confirmPassword: ""};
+const EMPTY_REGISTER = { name: "", lastName: "", email: "", password: "", vehicle: "", vehicleDimension: "", unitNumber: "", confirmPassword: "" };
 
 const RegisterDriverModal = ({ onClose, onSuccess }) => {
-
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const [form, setForm] = useState(EMPTY_REGISTER);
   const [loading, setLoading] = useState(false);
@@ -277,28 +247,24 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!form.name || !form.lastName || !form.email || !form.password || !form.vehicleDimension || !form.unitNumber || !form.confirmPassword) {
-      Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
+      Swal.fire({ icon: "warning", title: t("common_missing_fields"), text: t("register_driver_error_missing"), confirmButtonColor: "#2563eb" });
       return;
     }
-
-    if(form.password != form.confirmPassword){
-      Swal.fire({ icon: "warning", title: "Passwords do not match", text: "Passwords do not match", confirmButtonColor: "#2563eb" });
+    if (form.password !== form.confirmPassword) {
+      Swal.fire({ icon: "warning", title: t("register_driver_error_password"), confirmButtonColor: "#2563eb" });
       return;
     }
-
     try {
       setLoading(true);
       const result = await dispatch(registerUser(form.email, form.password, form.name, form.lastName, form.vehicle, form.vehicleDimension, form.unitNumber));
-
       if (result.token) {
         onClose();
-        Swal.fire({ icon: "success", title: "Driver registered", text: "The driver was added to your fleet", confirmButtonColor: "#2563eb" })
+        Swal.fire({ icon: "success", title: t("register_driver_success_title"), text: t("register_driver_success_text"), confirmButtonColor: "#2563eb" })
           .then(() => onSuccess?.());
       }
     } catch {
-      Swal.fire({ icon: "error", title: "Error", text: "An error occurred while creating the user", confirmButtonColor: "#2563eb" });
+      Swal.fire({ icon: "error", title: t("common_error"), text: t("register_driver_error_failed"), confirmButtonColor: "#2563eb" });
     } finally {
       setLoading(false);
     }
@@ -308,38 +274,32 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
   const labelClass = "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5";
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
 
         {/* Header */}
         <div className="bg-blue-600 px-6 py-5 flex items-start justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white">Register Driver</h2>
-            <p className="text-blue-100 text-sm mt-0.5">Add a new driver to your fleet</p>
+            <h2 className="text-xl font-bold text-white">{t("register_driver_title")}</h2>
+            <p className="text-blue-100 text-sm mt-0.5">{t("register_driver_subtitle")}</p>
           </div>
-          <button onClick={onClose} className="text-white/70 hover:text-white transition mt-1">
-            <X size={20} />
-          </button>
+          <button onClick={onClose} className="text-white/70 hover:text-white transition mt-1"><X size={20} /></button>
         </div>
 
         {/* Body */}
         <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col">
           <div className="px-6 py-5 space-y-4">
 
-            {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>First Name</label>
+                <label className={labelClass}>{t("register_driver_first_name")}</label>
                 <div className="relative">
                   <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input type="text" name="name" value={form.name} onChange={handleChange} placeholder="John" className={inputClass} />
                 </div>
               </div>
               <div>
-                <label className={labelClass}>Last Name</label>
+                <label className={labelClass}>{t("register_driver_last_name")}</label>
                 <div className="relative">
                   <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input type="text" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Doe" className={inputClass} />
@@ -347,9 +307,8 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
               </div>
             </div>
 
-            {/* Vehicle */}
             <div>
-              <label className={labelClass}>Vehicle</label>
+              <label className={labelClass}>{t("register_driver_vehicle")}</label>
               <div className="relative">
                 <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input type="text" name="vehicle" value={form.vehicle} onChange={handleChange} placeholder="" className={inputClass} />
@@ -357,7 +316,7 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
             </div>
 
             <div>
-              <label className={labelClass}>Vehicle Dimensions</label>
+              <label className={labelClass}>{t("register_driver_dimensions")}</label>
               <div className="relative">
                 <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input type="text" name="vehicleDimension" value={form.vehicleDimension} onChange={handleChange} placeholder="" className={inputClass} />
@@ -365,68 +324,50 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
             </div>
 
             <div>
-              <label className={labelClass}>Unit number</label>
+              <label className={labelClass}>{t("register_driver_unit")}</label>
               <div className="relative">
                 <Truck size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input type="text" name="unitNumber" value={form.unitNumber} onChange={handleChange} placeholder="" className={inputClass} />
               </div>
             </div>
 
-            {/* Email */}
             <div>
-              <label className={labelClass}>Email</label>
+              <label className={labelClass}>{t("register_driver_email")}</label>
               <div className="relative">
                 <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="driver@email.com" autoComplete="off" className={inputClass} />
               </div>
             </div>
 
-            {/* Password */}
             <div>
-              <label className={labelClass}>Password</label>
+              <label className={labelClass}>{t("register_driver_password")}</label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
+                  type={showPassword ? "text" : "password"} name="password" value={form.password}
+                  onChange={handleChange} placeholder="••••••••" autoComplete="new-password"
                   className="w-full pl-9 pr-12 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                >
+                <button type="button" onClick={() => setShowPassword(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className={labelClass}>Confirm Password</label>
+              <label className={labelClass}>{t("register_driver_confirm_password")}</label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={form.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
+                  type={showPassword ? "text" : "password"} name="confirmPassword" value={form.confirmPassword}
+                  onChange={handleChange} placeholder="••••••••" autoComplete="new-password"
                   className="w-full pl-9 pr-12 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(s => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
-                >
+                <button type="button" onClick={() => setShowPassword(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
@@ -436,20 +377,12 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
 
           {/* Footer */}
           <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3 flex-shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium"
-            >
-              Cancel
+            <button type="button" onClick={onClose} className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium">
+              {t("register_driver_cancel")}
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-            >
+            <button type="submit" disabled={loading} className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
               {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {loading ? "Registering..." : "Register Driver"}
+              {loading ? t("register_driver_submitting") : t("register_driver_submit")}
             </button>
           </div>
         </form>
@@ -457,34 +390,23 @@ const RegisterDriverModal = ({ onClose, onSuccess }) => {
       </div>
     </div>
   );
-
 };
 
 /* ─── Users List ─────────────────────────────────────── */
 
-// Cambia solo la firma del componente y agrega el filtrado
-
 export const UsersList = ({ unitFilter = "" }) => {
-
+  const { t } = useLanguage();
   const users = useSelector((state) => state.users);
   const dispatch = useDispatch();
   const [assignUser, setAssignUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
 
-  // ── Filtrado por unitNumber, orden A-Z ──────────────
   const filteredUsers = users
     .filter((user) =>
-      user.unitNumber
-        ?.toString()
-        .toLowerCase()
-        .includes(unitFilter.toLowerCase())
+      user.unitNumber?.toString().toLowerCase().includes(unitFilter.toLowerCase())
     )
     .sort((a, b) =>
-      (a.unitNumber || "").toString().localeCompare(
-        (b.unitNumber || "").toString(),
-        undefined,
-        { numeric: true }
-      )
+      (a.unitNumber || "").toString().localeCompare((b.unitNumber || "").toString(), undefined, { numeric: true })
     );
 
   useEffect(() => {
@@ -496,32 +418,25 @@ export const UsersList = ({ unitFilter = "" }) => {
   }, [dispatch]);
 
   return (
-
     <div className="space-y-6 border border-gray-600 shadow-md rounded-lg">
 
       {assignUser && (
-        <AssignLoadModal
-          user={assignUser}
-          onClose={() => setAssignUser(null)}
-        />
+        <AssignLoadModal user={assignUser} onClose={() => setAssignUser(null)} />
       )}
 
       {showRegister && (
-        <RegisterDriverModal
-          onClose={() => setShowRegister(false)}
-          onSuccess={() => dispatch(getUsers())}
-        />
+        <RegisterDriverModal onClose={() => setShowRegister(false)} onSuccess={() => dispatch(getUsers())} />
       )}
 
       {/* HEADER */}
       <div className="flex justify-between items-center px-5 pt-5">
-        <h2 className="text-xl font-semibold text-gray-800">Drivers</h2>
+        <h2 className="text-xl font-semibold text-gray-800">{t("drivers_title")}</h2>
         <button
           onClick={() => setShowRegister(true)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium"
         >
           <UserPlus size={16} />
-          Register Driver
+          {t("drivers_register")}
         </button>
       </div>
 
@@ -530,10 +445,10 @@ export const UsersList = ({ unitFilter = "" }) => {
         <table className="min-w-full">
           <thead className="bg-gray-50 border-b">
             <tr className="text-left text-xs text-gray-500 uppercase tracking-wide">
-              <th className="px-6 py-3">First Name</th>
-              <th className="px-6 py-3">Last Name</th>
-              <th className="px-6 py-3">Unit #</th>
-              <th className="px-6 py-3">Email</th>
+              <th className="px-6 py-3">{t("drivers_col_first_name")}</th>
+              <th className="px-6 py-3">{t("drivers_col_last_name")}</th>
+              <th className="px-6 py-3">{t("drivers_col_unit")}</th>
+              <th className="px-6 py-3">{t("drivers_col_email")}</th>
               <th className="px-6 py-3"></th>
             </tr>
           </thead>
@@ -559,7 +474,7 @@ export const UsersList = ({ unitFilter = "" }) => {
                         onClick={() => setAssignUser(user)}
                         className="bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 transition text-xs font-semibold"
                       >
-                        Assign Load
+                        {t("drivers_assign_load")}
                       </button>
                       <button
                         onClick={() => {
@@ -567,8 +482,8 @@ export const UsersList = ({ unitFilter = "" }) => {
                           navigator.clipboard.writeText(url).then(() => {
                             Swal.fire({
                               icon: "success",
-                              title: "Link copied!",
-                              text: "Share this link to track the driver's live location.",
+                              title: t("link_copied_title"),
+                              text: t("link_copied_text"),
                               confirmButtonColor: "#2563eb",
                               timer: 2500,
                               showConfirmButton: false,
@@ -579,7 +494,7 @@ export const UsersList = ({ unitFilter = "" }) => {
                         title="Copy tracking link"
                       >
                         <Link size={12} />
-                        Track
+                        {t("drivers_track")}
                       </button>
                     </div>
                   </td>
@@ -588,7 +503,7 @@ export const UsersList = ({ unitFilter = "" }) => {
             ) : (
               <tr>
                 <td colSpan={5} className="px-6 py-10 text-center text-sm text-gray-400">
-                  No drivers match unit number <span className="font-semibold text-gray-600">"{unitFilter}"</span>
+                  {t("drivers_no_match")} <span className="font-semibold text-gray-600">"{unitFilter}"</span>
                 </td>
               </tr>
             )}
@@ -597,7 +512,5 @@ export const UsersList = ({ unitFilter = "" }) => {
       </div>
 
     </div>
-
   );
-
 };

@@ -3,14 +3,15 @@ import { backendBaseUrl } from "../../utils/funciones";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import Swal from "sweetalert2";
 import { Link, X } from "lucide-react";
+import { useLanguage } from "../../context/LanguageContext";
 
-const copyTrackLink = (userId) => {
+const copyTrackLink = (userId, t) => {
   const url = `${window.location.origin}/track/${userId}`;
   navigator.clipboard.writeText(url).then(() => {
     Swal.fire({
       icon: "success",
-      title: "Link copied!",
-      text: "Share this link to track the driver's live location.",
+      title: t("link_copied_title"),
+      text: t("link_copied_text"),
       confirmButtonColor: "#2563eb",
       timer: 2500,
       showConfirmButton: false,
@@ -36,14 +37,7 @@ const MAP_OPTIONS = {
   styles: MAP_STYLES,
 };
 
-const STATUS_LABELS = {
-  all: "All",
-  active: "Active",
-  picked_up: "Picked up",
-  on_the_way: "On the way",
-  delivered: "Delivered",
-  completed: "Completed",
-};
+const STATUS_KEYS = ["all", "active", "picked_up", "on_the_way", "delivered", "completed"];
 
 const STATUS_COLORS = {
   active: "bg-blue-100 text-blue-700 border-blue-200",
@@ -57,6 +51,16 @@ const STATUS_COLORS = {
 const toMph = (speed) => Math.round(speed * 0.621371);
 
 export const Loads = () => {
+  const { t } = useLanguage();
+
+  const STATUS_LABELS = {
+    all:       t("loads_status_all"),
+    active:    t("loads_status_active"),
+    picked_up: t("loads_status_picked_up"),
+    on_the_way: t("loads_status_on_the_way"),
+    delivered: t("loads_status_delivered"),
+    completed: t("loads_status_completed"),
+  };
 
   const [loads, setLoads] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -231,7 +235,7 @@ export const Loads = () => {
 
       if (!datePickUp || !companyNamePickUp || !addressPickup || !cityPickUp ||
           !dateDelivery || !companyDelivery || !addressDelivery || !cityDelivery || !rate) {
-        Swal.fire({ icon: "warning", title: "Missing fields", text: "All fields are required", confirmButtonColor: "#2563eb" });
+        Swal.fire({ icon: "warning", title: t("common_missing_fields"), text: t("edit_load_missing_fields"), confirmButtonColor: "#2563eb" });
         return;
       }
       try {
@@ -255,15 +259,15 @@ export const Loads = () => {
           onClose();
           Swal.fire({
             icon: "success",
-            title: "Load updated",
-            text: "The load was updated successfully",
+            title: t("edit_load_success_title"),
+            text: t("edit_load_success_text"),
             confirmButtonColor: "#2563eb",
           }).then(() => window.location.reload());
         } else {
-          Swal.fire({ icon: "error", title: "Error", text: data.message || "Could not update the load", confirmButtonColor: "#2563eb" });
+          Swal.fire({ icon: "error", title: t("common_error"), text: data.message || t("edit_load_error"), confirmButtonColor: "#2563eb" });
         }
       } catch {
-        Swal.fire({ icon: "error", title: "Server error", text: "Please try again", confirmButtonColor: "#2563eb" });
+        Swal.fire({ icon: "error", title: t("common_server_error"), text: t("common_try_again"), confirmButtonColor: "#2563eb" });
       } finally {
         setLoading(false);
       }
@@ -272,11 +276,11 @@ export const Loads = () => {
     const handleCancelLoad = async () => {
       const result = await Swal.fire({
         icon: "warning",
-        title: "Cancel Load?",
-        text: "The driver will be notified that this load has been cancelled.",
+        title: t("edit_load_cancel_title"),
+        text: t("edit_load_cancel_text"),
         showCancelButton: true,
-        confirmButtonText: "Yes, cancel it",
-        cancelButtonText: "Keep it",
+        confirmButtonText: t("edit_load_cancel_yes"),
+        cancelButtonText: t("edit_load_cancel_no"),
         confirmButtonColor: "#dc2626",
         cancelButtonColor: "#6b7280",
       });
@@ -289,15 +293,15 @@ export const Loads = () => {
           onClose();
           Swal.fire({
             icon: "success",
-            title: "Load cancelled",
-            text: "The driver has been notified.",
+            title: t("edit_load_cancel_success_title"),
+            text: t("edit_load_cancel_success_text"),
             confirmButtonColor: "#2563eb",
           }).then(() => window.location.reload());
         } else {
-          Swal.fire({ icon: "error", title: "Error", text: "Could not cancel the load", confirmButtonColor: "#2563eb" });
+          Swal.fire({ icon: "error", title: t("common_error"), text: t("edit_load_cancel_error"), confirmButtonColor: "#2563eb" });
         }
       } catch {
-        Swal.fire({ icon: "error", title: "Server error", text: "Please try again", confirmButtonColor: "#2563eb" });
+        Swal.fire({ icon: "error", title: t("common_server_error"), text: t("common_try_again"), confirmButtonColor: "#2563eb" });
       }
     };
 
@@ -314,7 +318,7 @@ export const Loads = () => {
           {/* Header */}
           <div className="bg-blue-600 px-6 py-5 flex items-start justify-between flex-shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-white">Edit Load</h2>
+              <h2 className="text-xl font-bold text-white">{t("edit_load_title")}</h2>
               <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 mt-2">
                 <div className="w-5 h-5 bg-white/30 rounded-full flex items-center justify-center text-xs">👤</div>
                 <span className="text-sm font-semibold text-white">
@@ -335,7 +339,7 @@ export const Loads = () => {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base">🔄</span>
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Status</span>
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{t("edit_load_status")}</span>
                   <div className="flex-1 h-px bg-gray-100" />
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -360,29 +364,29 @@ export const Loads = () => {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base">📍</span>
-                  <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Pickup</span>
+                  <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">{t("edit_load_pickup")}</span>
                   <div className="flex-1 h-px bg-blue-100" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>Date & Time</label>
+                    <label className={labelClass}>{t("edit_load_date")}</label>
                     <input type="datetime-local" name="datePickUp" value={form.datePickUp} onChange={handleChange} className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>Company</label>
-                    <input type="text" name="companyNamePickUp" value={form.companyNamePickUp} onChange={handleChange} placeholder="Company name" className={inputClass} />
+                    <label className={labelClass}>{t("edit_load_company")}</label>
+                    <input type="text" name="companyNamePickUp" value={form.companyNamePickUp} onChange={handleChange} placeholder={t("edit_load_placeholder_company")} className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>Address</label>
-                    <input type="text" name="addressPickup" value={form.addressPickup} onChange={handleChange} placeholder="Street address" className={inputClass} />
+                    <label className={labelClass}>{t("edit_load_address")}</label>
+                    <input type="text" name="addressPickup" value={form.addressPickup} onChange={handleChange} placeholder={t("edit_load_placeholder_address")} className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>City</label>
-                    <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder="City" className={inputClass} />
+                    <label className={labelClass}>{t("edit_load_city")}</label>
+                    <input type="text" name="cityPickUp" value={form.cityPickUp} onChange={handleChange} placeholder={t("edit_load_placeholder_city")} className={inputClass} />
                   </div>
                   <div className="col-span-2">
-                    <label className={labelClass}>Note for driver (pickup)</label>
-                    <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder="Instructions for pickup..." rows={2} className={inputClass + " resize-none"} />
+                    <label className={labelClass}>{t("edit_load_note_pickup")}</label>
+                    <textarea name="notePickUp" value={form.notePickUp} onChange={handleChange} placeholder={t("edit_load_placeholder_pickup_note")} rows={2} className={inputClass + " resize-none"} />
                   </div>
                 </div>
               </div>
@@ -391,29 +395,29 @@ export const Loads = () => {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base">🚚</span>
-                  <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">Delivery</span>
+                  <span className="text-xs font-bold text-cyan-600 uppercase tracking-widest">{t("edit_load_delivery")}</span>
                   <div className="flex-1 h-px bg-cyan-100" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={labelClass}>Date & Time</label>
+                    <label className={labelClass}>{t("edit_load_date")}</label>
                     <input type="datetime-local" name="dateDelivery" value={form.dateDelivery} onChange={handleChange} className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>Company</label>
-                    <input type="text" name="companyDelivery" value={form.companyDelivery} onChange={handleChange} placeholder="Company name" className={inputClass} />
+                    <label className={labelClass}>{t("edit_load_company")}</label>
+                    <input type="text" name="companyDelivery" value={form.companyDelivery} onChange={handleChange} placeholder={t("edit_load_placeholder_company")} className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>Address</label>
-                    <input type="text" name="addressDelivery" value={form.addressDelivery} onChange={handleChange} placeholder="Street address" className={inputClass} />
+                    <label className={labelClass}>{t("edit_load_address")}</label>
+                    <input type="text" name="addressDelivery" value={form.addressDelivery} onChange={handleChange} placeholder={t("edit_load_placeholder_address")} className={inputClass} />
                   </div>
                   <div>
-                    <label className={labelClass}>City</label>
-                    <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder="City" className={inputClass} />
+                    <label className={labelClass}>{t("edit_load_city")}</label>
+                    <input type="text" name="cityDelivery" value={form.cityDelivery} onChange={handleChange} placeholder={t("edit_load_placeholder_city")} className={inputClass} />
                   </div>
                   <div className="col-span-2">
-                    <label className={labelClass}>Note for driver (delivery)</label>
-                    <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder="Instructions for delivery..." rows={2} className={inputClass + " resize-none"} />
+                    <label className={labelClass}>{t("edit_load_note_delivery")}</label>
+                    <textarea name="noteDelivery" value={form.noteDelivery} onChange={handleChange} placeholder={t("edit_load_placeholder_delivery_note")} rows={2} className={inputClass + " resize-none"} />
                   </div>
                 </div>
               </div>
@@ -422,11 +426,11 @@ export const Loads = () => {
               <div>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-base">💰</span>
-                  <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Rate</span>
+                  <span className="text-xs font-bold text-emerald-600 uppercase tracking-widest">{t("edit_load_rate")}</span>
                   <div className="flex-1 h-px bg-emerald-100" />
                 </div>
                 <div className="max-w-[200px]">
-                  <label className={labelClass}>Amount</label>
+                  <label className={labelClass}>{t("edit_load_amount")}</label>
                   <input
                     type="text"
                     name="rate"
@@ -447,7 +451,7 @@ export const Loads = () => {
                 onClick={handleCancelLoad}
                 className="px-5 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-100 transition"
               >
-                Cancel Load
+                {t("edit_load_cancel_btn")}
               </button>
               <div className="flex gap-3">
                 <button
@@ -455,7 +459,7 @@ export const Loads = () => {
                   onClick={onClose}
                   className="px-5 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition font-medium"
                 >
-                  Close
+                  {t("edit_load_close")}
                 </button>
                 <button
                   type="submit"
@@ -463,7 +467,7 @@ export const Loads = () => {
                   className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                  {loading ? "Saving..." : "Save Changes"}
+                  {loading ? t("edit_load_saving") : t("edit_load_save")}
                 </button>
               </div>
             </div>
@@ -481,7 +485,7 @@ export const Loads = () => {
       <div className="flex h-full items-center justify-center bg-gray-50">
         <div className="text-center text-gray-400">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm">Loading map...</p>
+          <p className="text-sm">{t("track_loading_map")}</p>
         </div>
       </div>
     );
@@ -504,7 +508,7 @@ export const Loads = () => {
               type="text"
               value={unitSearch}
               onChange={(e) => { setUnitSearch(e.target.value); setSelectedId(null); }}
-              placeholder={`Search ${loads.length} assets...`}
+              placeholder={t("loads_search_placeholder").replace("{count}", loads.length)}
               className="flex-1 text-sm text-gray-700 bg-transparent outline-none placeholder-gray-400"
             />
             {unitSearch && (
@@ -538,13 +542,13 @@ export const Loads = () => {
         {/* Count */}
         <div className="px-4 py-2 border-b">
           <span className="text-xs text-gray-400 font-medium">
-            {filteredLoads.length} {filteredLoads.length === 1 ? "load" : "loads"}
+            {filteredLoads.length} {filteredLoads.length === 1 ? t("loads_count_one") : t("loads_count_many")}
             {selectedId && (
               <button
                 onClick={() => setSelectedId(null)}
                 className="cursor-pointer ml-2 text-blue-500 hover:text-blue-700 underline"
               >
-                Show all
+                {t("loads_show_all")}
               </button>
             )}
           </span>
@@ -555,7 +559,7 @@ export const Loads = () => {
           {filteredLoads.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               <div className="text-3xl mb-2">📦</div>
-              <p className="text-sm">No loads found</p>
+              <p className="text-sm">{t("loads_no_loads")}</p>
             </div>
           ) : (
             filteredLoads.map(load => {
@@ -595,12 +599,12 @@ export const Loads = () => {
                       )}
                       {load.user?._id && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); copyTrackLink(load.user._id); }}
+                          onClick={(e) => { e.stopPropagation(); copyTrackLink(load.user._id, t); }}
                           className="flex items-center gap-1 p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
                           title="Copy tracking link"
                         >
                           <Link size={13} />
-                          <span className="text-[11px] font-semibold">Track</span>
+                          <span className="text-[11px] font-semibold">{t("loads_track")}</span>
                         </button>
                       )}
                       <button
@@ -756,7 +760,7 @@ export const Loads = () => {
                   }}>
                     <span>{unitLabel}</span>
                     <button
-                      onClick={(e) => { e.stopPropagation(); copyTrackLink(user._id); }}
+                      onClick={(e) => { e.stopPropagation(); copyTrackLink(user._id, t); }}
                       title="Copy tracking link"
                       style={{
                         background: "rgba(255,255,255,0.20)",
