@@ -218,6 +218,38 @@ const translations = {
     track_not_found_title: "Driver not found",
     track_not_found_text: "This tracking link may be invalid or expired.",
 
+    // ── View driver modal ─────────────────────────────────
+    view_driver_title: "Driver Info",
+
+    // ── Edit driver modal ─────────────────────────────────
+    edit_driver_title: "Edit Driver",
+    edit_driver_subtitle: "Update driver information",
+    edit_driver_new_password: "New Password (optional)",
+    edit_driver_confirm_new_password: "Confirm New Password",
+    edit_driver_password_hint: "Leave password fields blank to keep the current password.",
+    edit_driver_cancel: "Cancel",
+    edit_driver_submit: "Save Changes",
+    edit_driver_submitting: "Saving...",
+    edit_driver_error_missing: "Name, email and unit number are required",
+    edit_driver_success_title: "Driver updated",
+    edit_driver_success_text: "The driver information was saved successfully",
+    edit_driver_error_failed: "Could not update the driver",
+
+    // ── Delete driver ─────────────────────────────────────
+    delete_driver_title: "Delete Driver?",
+    delete_driver_text: "will be permanently removed from the fleet.",
+    delete_driver_confirm: "Yes, delete",
+    delete_driver_cancel: "Cancel",
+    delete_driver_success: "Driver deleted",
+    delete_driver_error: "Could not delete the driver",
+
+    // ── ETA ───────────────────────────────────────────────
+    loads_eta_label: "ETA to delivery",
+    loads_eta_unavailable: "Route not available",
+    track_eta_label: "ETA to delivery",
+    track_eta_unavailable: "Route not available",
+    track_delivery_label: "Delivery",
+
     // ── Copy link toast ───────────────────────────────────
     link_copied_title: "Link copied!",
     link_copied_text: "Share this link to track the driver's live location.",
@@ -441,6 +473,38 @@ const translations = {
     track_loading_map: "Cargando mapa...",
     track_not_found_title: "Conductor no encontrado",
     track_not_found_text: "Este enlace puede ser inválido o haber expirado.",
+
+    // ── Modal ver conductor ───────────────────────────────
+    view_driver_title: "Info del Conductor",
+
+    // ── Modal editar conductor ────────────────────────────
+    edit_driver_title: "Editar Conductor",
+    edit_driver_subtitle: "Actualizar información del conductor",
+    edit_driver_new_password: "Nueva Contraseña (opcional)",
+    edit_driver_confirm_new_password: "Confirmar Nueva Contraseña",
+    edit_driver_password_hint: "Deja los campos de contraseña vacíos para mantener la actual.",
+    edit_driver_cancel: "Cancelar",
+    edit_driver_submit: "Guardar Cambios",
+    edit_driver_submitting: "Guardando...",
+    edit_driver_error_missing: "Nombre, correo y número de unidad son obligatorios",
+    edit_driver_success_title: "Conductor actualizado",
+    edit_driver_success_text: "La información del conductor fue guardada exitosamente",
+    edit_driver_error_failed: "No se pudo actualizar el conductor",
+
+    // ── Eliminar conductor ────────────────────────────────
+    delete_driver_title: "¿Eliminar Conductor?",
+    delete_driver_text: "será eliminado permanentemente de la flota.",
+    delete_driver_confirm: "Sí, eliminar",
+    delete_driver_cancel: "Cancelar",
+    delete_driver_success: "Conductor eliminado",
+    delete_driver_error: "No se pudo eliminar el conductor",
+
+    // ── ETA ───────────────────────────────────────────────
+    loads_eta_label: "Tiempo estimado a destino",
+    loads_eta_unavailable: "Ruta no disponible",
+    track_eta_label: "Tiempo estimado a destino",
+    track_eta_unavailable: "Ruta no disponible",
+    track_delivery_label: "Entrega",
 
     // ── Toast copiar enlace ───────────────────────────────
     link_copied_title: "¡Enlace copiado!",

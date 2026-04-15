@@ -59,7 +59,6 @@ export const Loads = () => {
     picked_up: t("loads_status_picked_up"),
     on_the_way: t("loads_status_on_the_way"),
     delivered: t("loads_status_delivered"),
-    completed: t("loads_status_completed"),
   };
 
   const [loads, setLoads] = useState([]);
@@ -70,6 +69,8 @@ export const Loads = () => {
   const mapRef = useRef(null);
   const hasFitOnce = useRef(false);
   const [editLoad, setEditLoad] = useState(null);
+  const [etaMap, setEtaMap] = useState({});
+  const etaLastCalc = useRef({});
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -106,9 +107,9 @@ export const Loads = () => {
     }
   };
 
-  // Exclude completed from "All" filter; sort A-Z by unit number
-  const filteredLoads = loads
-    .filter(load => {
+  // Exclude completed from "All" filter; show only latest load per driver; sort A-Z by unit number
+  const filteredLoads = (() => {
+    const filtered = loads.filter(load => {
       if (filter === "all" && load.state === "completed") return false;
       const matchesStatus = filter === "all" || load.state === filter;
       const matchesUnit =
@@ -118,12 +119,24 @@ export const Loads = () => {
           .toLowerCase()
           .includes(unitSearch.toLowerCase());
       return matchesStatus && matchesUnit;
-    })
-    .sort((a, b) => {
+    });
+
+    // Keep only the most recent (largest _id = latest) load per driver
+    const byDriver = new Map();
+    for (const load of filtered) {
+      const key = load.user?._id ?? load._id;
+      const existing = byDriver.get(key);
+      if (!existing || load._id > existing._id) {
+        byDriver.set(key, load);
+      }
+    }
+
+    return Array.from(byDriver.values()).sort((a, b) => {
       const ua = (a.user?.unitNumber || "").toString();
       const ub = (b.user?.unitNumber || "").toString();
       return ua.localeCompare(ub, undefined, { numeric: true });
     });
+  })();
 
   // All users with known location — always shown on map
   const usersWithLocation = allUsers.filter(
@@ -164,6 +177,37 @@ export const Loads = () => {
       lng: Number(load.user.lon),
     });
   }, [loads]);
+
+  // ETA to delivery — recalculate at most every 30 seconds for the selected load
+  useEffect(() => {
+    if (!isLoaded || !selectedId || !window.google) return;
+    const load = loads.find(l => l._id === selectedId);
+    if (!load?.user?.lat || !load?.user?.lon) return;
+    if (!load?.addressDelivery || !load?.cityDelivery) return;
+
+    const now = Date.now();
+    if (now - (etaLastCalc.current[selectedId] || 0) < 30000) return;
+    etaLastCalc.current[selectedId] = now;
+
+    const service = new window.google.maps.DirectionsService();
+    service.route(
+      {
+        origin: { lat: Number(load.user.lat), lng: Number(load.user.lon) },
+        destination: `${load.addressDelivery}, ${load.cityDelivery}`,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK") {
+          const secs = result.routes[0]?.legs[0]?.duration?.value || 0;
+          const h = Math.floor(secs / 3600);
+          const m = Math.floor((secs % 3600) / 60);
+          setEtaMap(prev => ({ ...prev, [selectedId]: h > 0 ? `${h}h ${m}m` : `${m}m` }));
+        } else {
+          setEtaMap(prev => ({ ...prev, [selectedId]: "N/A" }));
+        }
+      }
+    );
+  }, [selectedId, loads, isLoaded]);
 
   const handleSelectLoad = (load) => {
     if (selectedId === load._id) {
@@ -676,6 +720,25 @@ export const Loads = () => {
                             ${Number(load.rate).toLocaleString("en-US")}
                           </span>
                         </div>
+                      )}
+
+                      {/* ETA to delivery */}
+                      {etaMap[load._id] && (
+                        etaMap[load._id] === "N/A" ? (
+                          <div className="flex items-center gap-1.5 bg-gray-50 rounded-md px-2 py-1 mt-0.5">
+                            <span className="text-[10px]">⚠️</span>
+                            <span className="text-[11px] text-gray-400 italic">
+                              {t("loads_eta_unavailable")}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-blue-50 rounded-md px-2 py-1 mt-0.5">
+                            <span className="text-[10px]">⏱️</span>
+                            <span className="text-[11px] font-semibold text-blue-600">
+                              {t("loads_eta_label")}: <span className="font-bold">{etaMap[load._id]}</span>
+                            </span>
+                          </div>
+                        )
                       )}
 
                     </div>
