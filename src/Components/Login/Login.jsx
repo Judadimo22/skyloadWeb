@@ -4,18 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../../redux/actions/adminActions";
 import { AlertCircle, Eye, EyeOff, Mail, MapPin, Package, Truck, Users } from "lucide-react";
 import { Logo } from "../Logo/Logo";
-
-const FEATURES = [
-  { icon: MapPin,   text: "Live GPS tracking for all drivers" },
-  { icon: Truck,    text: "Assign and manage loads in seconds" },
-  { icon: Package,  text: "Real-time shipment status updates" },
-  { icon: Users,    text: "Full driver management dashboard" },
-];
+import { useLanguage } from "../../context/LanguageContext";
+import { LanguageSwitch } from "../LanguageSwitch";
 
 export default function Login() {
 
   const dispatch  = useDispatch();
   const navigate  = useNavigate();
+  const { t } = useLanguage();
 
   const [form, setForm]               = useState({ email: "", password: "" });
   const [loading, setLoading]         = useState(false);
@@ -29,7 +25,7 @@ export default function Login() {
     setError("");
 
     if (!form.email || !form.password) {
-      setError("All fields are required");
+      setError(t("login_error_required"));
       return;
     }
 
@@ -38,11 +34,18 @@ export default function Login() {
       const result = await dispatch(loginAdmin(form.email, form.password));
       if (result.status) navigate("/home");
     } catch {
-      setError("Invalid email or password");
+      setError(t("login_error_invalid"));
     } finally {
       setLoading(false);
     }
   };
+
+  const FEATURES = [
+    { icon: MapPin,   text: t("login_feature_gps") },
+    { icon: Truck,    text: t("login_feature_loads") },
+    { icon: Package,  text: t("login_feature_realtime") },
+    { icon: Users,    text: t("login_feature_dashboard") },
+  ];
 
   return (
     <div className="min-h-screen flex">
@@ -67,16 +70,16 @@ export default function Login() {
         <div className="relative z-10">
           <div className="inline-flex items-center gap-2 bg-blue-600/20 border border-blue-500/30 rounded-full px-4 py-1.5 mb-6">
             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-            <span className="text-blue-300 text-xs font-semibold uppercase tracking-widest">Fleet Point 360 Platform</span>
+            <span className="text-blue-300 text-xs font-semibold uppercase tracking-widest">{t("login_platform")}</span>
           </div>
 
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Fleet Point 360<br />
-            <span className="text-blue-400">management</span>
+            <span className="text-blue-400">{t("login_headline")}</span>
           </h1>
 
           <p className="text-slate-400 text-base mb-10 leading-relaxed max-w-sm">
-            Monitor your drivers, assign loads, and track shipments — all in one place.
+            {t("login_monitor")}
           </p>
 
           <div className="space-y-3">
@@ -93,7 +96,7 @@ export default function Login() {
 
         {/* Footer */}
         <p className="text-slate-600 text-xs relative z-10">
-          © {new Date().getFullYear()} Fleetpoint 360. All rights reserved.
+          © {new Date().getFullYear()} Fleetpoint 360. {t("login_copyright")}
         </p>
 
       </div>
@@ -111,8 +114,8 @@ export default function Login() {
             <span className="text-lg font-bold text-gray-800">Fleetpoint 360 Admin</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
-          <p className="text-gray-500 text-sm mb-8">Sign in to your admin account</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">{t("login_title")}</h2>
+          <p className="text-gray-500 text-sm mb-8">{t("login_subtitle")}</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
 
@@ -125,7 +128,7 @@ export default function Login() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Email
+                {t("login_email")}
               </label>
               <div className="relative">
                 <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -134,7 +137,7 @@ export default function Login() {
                   name="email"
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="admin@Fleetpoint 360.com"
+                  placeholder="admin@fleetpoint360.com"
                   className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
               </div>
@@ -142,7 +145,7 @@ export default function Login() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Password
+                {t("login_password")}
               </label>
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,13 +175,20 @@ export default function Login() {
               className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-700 active:bg-blue-800 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1 shadow-md shadow-blue-600/20"
             >
               {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("login_signing_in") : t("login_sign_in")}
             </button>
 
           </form>
 
-          <p className="text-xs text-center text-gray-400 mt-8">
-            © {new Date().getFullYear()} Fleetpoint 360 · Admin Panel
+          {/* Language switch */}
+          <div className="mt-6 flex justify-center">
+            <div className="bg-slate-800 rounded-lg px-2 py-1">
+              <LanguageSwitch />
+            </div>
+          </div>
+
+          <p className="text-xs text-center text-gray-400 mt-4">
+            © {new Date().getFullYear()} Fleetpoint 360 · {t("login_admin_panel")}
           </p>
 
         </div>

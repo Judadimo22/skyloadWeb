@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { backendBaseUrl } from "../utils/funciones";
+import { useLanguage } from "../context/LanguageContext";
+import { LanguageSwitch } from "../Components/LanguageSwitch";
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.35 };
 const DEFAULT_ZOOM = 4;
@@ -25,34 +27,44 @@ const toMph = (kmh) => Math.round(kmh * 0.621371);
 
 export const TrackPage = () => {
   const { driverId } = useParams();
+  const { t } = useLanguage();
   const [driver, setDriver] = useState(null);
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [eta, setEta] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const mapRef = useRef(null);
   const hasCentered = useRef(false);
+  const etaLastCalc = useRef(0);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
   });
 
-  const fetchDriver = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch(`${backendBaseUrl}/users`);
-      const data = await res.json();
-      const found = data.find((u) => u._id === driverId);
-      if (!found) {
-        setNotFound(true);
-        return;
-      }
+      // Fetch driver info
+      const usersRes = await fetch(`${backendBaseUrl}/users`);
+      const users = await usersRes.json();
+      const found = users.find((u) => u._id === driverId);
+      if (!found) { setNotFound(true); return; }
       setDriver(found);
+
+      // Fetch loads to find this driver's latest non-completed load
+      const loadsRes = await fetch(`${backendBaseUrl}/loads`);
+      const loads = await loadsRes.json();
+      const driverLoads = loads
+        .filter(l => l.user?._id === driverId && l.state !== "completed")
+        .sort((a, b) => (b._id > a._id ? 1 : -1));
+      setActiveLoad(driverLoads[0] || null);
     } catch {
-      // silently retry on next interval
+      // silently retry
     }
   };
 
   useEffect(() => {
-    fetchDriver();
-    const interval = setInterval(fetchDriver, 5000);
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [driverId]);
 
@@ -70,13 +82,43 @@ export const TrackPage = () => {
     mapRef.current.panTo({ lat: Number(driver.lat), lng: Number(driver.lon) });
   }, [driver?.lat, driver?.lon]);
 
+  // ETA calculation — recalculate at most every 30 seconds
+  useEffect(() => {
+    if (!isLoaded || !window.google) return;
+    if (!driver?.lat || !driver?.lon) return;
+    if (!activeLoad?.addressDelivery || !activeLoad?.cityDelivery) return;
+
+    const now = Date.now();
+    if (now - etaLastCalc.current < 30000) return;
+    etaLastCalc.current = now;
+
+    const service = new window.google.maps.DirectionsService();
+    service.route(
+      {
+        origin: { lat: Number(driver.lat), lng: Number(driver.lon) },
+        destination: `${activeLoad.addressDelivery}, ${activeLoad.cityDelivery}`,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK") {
+          const secs = result.routes[0]?.legs[0]?.duration?.value || 0;
+          const h = Math.floor(secs / 3600);
+          const m = Math.floor((secs % 3600) / 60);
+          setEta(h > 0 ? `${h}h ${m}m` : `${m}m`);
+        } else {
+          setEta("N/A");
+        }
+      }
+    );
+  }, [driver?.lat, driver?.lon, activeLoad, isLoaded]);
+
   if (notFound) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="text-5xl mb-4">🔍</div>
-          <h1 className="text-xl font-bold text-gray-700 mb-2">Driver not found</h1>
-          <p className="text-sm text-gray-400">This tracking link may be invalid or expired.</p>
+          <h1 className="text-xl font-bold text-gray-700 mb-2">{t("track_not_found_title")}</h1>
+          <p className="text-sm text-gray-400">{t("track_not_found_text")}</p>
         </div>
       </div>
     );
@@ -90,13 +132,14 @@ export const TrackPage = () => {
 
       {/* Top bar */}
       <div className="bg-white border-b px-4 py-3 flex items-center gap-3 shadow-sm flex-shrink-0">
-        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </div>
+
         <div className="flex-1 min-w-0">
           {driver ? (
             <>
@@ -104,26 +147,52 @@ export const TrackPage = () => {
                 {driver.name} {driver.lastName}
                 <span className="ml-2 text-xs font-normal text-gray-400">Unit #{unitLabel}</span>
               </p>
-              <p className="text-xs text-gray-400">
-                {hasLocation ? (
-                  <>
-                    Live location
-                    {driver.speed != null && (
-                      <span className="ml-2 font-semibold text-green-600">{toMph(driver.speed)} MPH</span>
-                    )}
-                  </>
-                ) : (
-                  "Waiting for location..."
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-xs text-gray-400">
+                  {hasLocation ? (
+                    <>
+                      {t("track_live")}
+                      {driver.speed != null && (
+                        <span className="ml-2 font-semibold text-green-600">{toMph(driver.speed)} MPH</span>
+                      )}
+                    </>
+                  ) : (
+                    t("track_waiting")
+                  )}
+                </p>
+                {/* ETA badge */}
+                {eta && activeLoad && (
+                  eta === "N/A" ? (
+                    <span className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 text-gray-400 text-xs italic px-2 py-0.5 rounded-full">
+                      ⚠️ {t("track_eta_unavailable")}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      ⏱️ {t("track_eta_label")}: <span className="font-bold">{eta}</span>
+                    </span>
+                  )
                 )}
-              </p>
+                {/* Delivery destination */}
+                {activeLoad?.cityDelivery && (
+                  <span className="text-xs text-gray-400 truncate hidden sm:block">
+                    🚚 {activeLoad.companyDelivery} · {activeLoad.cityDelivery}
+                  </span>
+                )}
+              </div>
             </>
           ) : (
-            <p className="text-sm text-gray-400">Loading driver info...</p>
+            <p className="text-sm text-gray-400">{t("track_loading_driver")}</p>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className={`w-2 h-2 rounded-full ${hasLocation ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
-          <span className="text-xs text-gray-400">{hasLocation ? "Live" : "No signal"}</span>
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${hasLocation ? "bg-green-400 animate-pulse" : "bg-gray-300"}`} />
+            <span className="text-xs text-gray-400">{hasLocation ? t("track_live_label") : t("track_no_signal")}</span>
+          </div>
+          <div className="bg-gray-100 rounded-lg px-1 py-0.5">
+            <LanguageSwitch mode="light" />
+          </div>
         </div>
       </div>
 
@@ -166,6 +235,11 @@ export const TrackPage = () => {
                         {toMph(driver.speed)} MPH
                       </span>
                     )}
+                    {eta && eta !== "N/A" && (
+                      <span style={{ marginLeft: "6px", fontWeight: "400", opacity: 0.85 }}>
+                        · ⏱️ {eta}
+                      </span>
+                    )}
                   </div>
                   <div style={{
                     width: 0,
@@ -190,7 +264,7 @@ export const TrackPage = () => {
           </GoogleMap>
         ) : (
           <div className="h-full flex items-center justify-center bg-gray-100">
-            <p className="text-gray-400 text-sm">Loading map...</p>
+            <p className="text-gray-400 text-sm">{t("track_loading_map")}</p>
           </div>
         )}
       </div>
