@@ -409,7 +409,7 @@ const EditDriverModal = ({ user, onClose, onSuccess }) => {
         vehicleDimension: form.vehicleDimension,
         unitNumber: form.unitNumber,
       };
-      if (form.newPassword) body.password = form.newPassword;
+      if (form.newPassword) body.newPassword = form.newPassword;
 
       const res = await fetch(`${backendBaseUrl}/user/${user._id}`, {
         method: "PUT",
