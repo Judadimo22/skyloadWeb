@@ -107,35 +107,35 @@ export const Loads = () => {
     }
   };
 
-  // Exclude completed from "All" filter; show only latest load per driver; sort A-Z by unit number
-  const filteredLoads = (() => {
-    const filtered = loads.filter(load => {
-      if (filter === "all" && load.state === "completed") return false;
-      const matchesStatus = filter === "all" || load.state === filter;
-      const matchesUnit =
-        unitSearch === "" ||
-        load.user?.unitNumber
-          ?.toString()
-          .toLowerCase()
-          .includes(unitSearch.toLowerCase());
-      return matchesStatus && matchesUnit;
-    });
-
-    // Keep only the most recent (largest _id = latest) load per driver
-    const byDriver = new Map();
-    for (const load of filtered) {
-      const key = load.user?._id ?? load._id;
-      const existing = byDriver.get(key);
-      if (!existing || load._id > existing._id) {
-        byDriver.set(key, load);
-      }
-    }
-
-    return Array.from(byDriver.values()).sort((a, b) => {
-      const ua = (a.user?.unitNumber || "").toString();
-      const ub = (b.user?.unitNumber || "").toString();
-      return ua.localeCompare(ub, undefined, { numeric: true });
-    });
+  // All drivers view: every driver shown with their latest matching load (or null)
+  const allDriversView = (() => {
+    return allUsers
+      .map(user => {
+        // Find the latest non-completed load for this driver that matches the filter
+        const userLoads = loads
+          .filter(l => {
+            if (l.user?._id !== user._id) return false;
+            if (filter === "all" && l.state === "completed") return false;
+            if (filter !== "all" && l.state !== filter) return false;
+            return true;
+          })
+          .sort((a, b) => (b._id > a._id ? 1 : -1));
+        return { user, load: userLoads[0] || null };
+      })
+      .filter(({ user, load }) => {
+        const matchesUnit =
+          unitSearch === "" ||
+          user.unitNumber?.toString().toLowerCase().includes(unitSearch.toLowerCase());
+        if (!matchesUnit) return false;
+        // When a specific status filter is active, only show drivers with a matching load
+        if (filter !== "all" && !load) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const ua = (a.user?.unitNumber || "").toString();
+        const ub = (b.user?.unitNumber || "").toString();
+        return ua.localeCompare(ub, undefined, { numeric: true });
+      });
   })();
 
   // All users with known location — always shown on map
@@ -167,22 +167,21 @@ export const Loads = () => {
     }
   }, [loads, allUsers, filter, selectedId]);
 
-  // Follow selected driver in real-time
+  // Follow selected driver in real-time (selectedId is now user._id)
   useEffect(() => {
     if (!mapRef.current || !selectedId) return;
-    const load = loads.find(l => l._id === selectedId);
-    if (!load?.user?.lat) return;
-    mapRef.current.panTo({
-      lat: Number(load.user.lat),
-      lng: Number(load.user.lon),
-    });
-  }, [loads]);
+    const driver = allUsers.find(u => u._id === selectedId);
+    if (!driver?.lat) return;
+    mapRef.current.panTo({ lat: Number(driver.lat), lng: Number(driver.lon) });
+  }, [allUsers]);
 
-  // ETA to delivery — recalculate at most every 30 seconds for the selected load
+  // ETA to delivery — recalculate at most every 30 seconds for the selected driver's load
   useEffect(() => {
     if (!isLoaded || !selectedId || !window.google) return;
-    const load = loads.find(l => l._id === selectedId);
-    if (!load?.user?.lat || !load?.user?.lon) return;
+    const driverView = allDriversView.find(d => d.user._id === selectedId);
+    if (!driverView?.load) return;
+    const { user, load } = driverView;
+    if (!user?.lat || !user?.lon) return;
     if (!load?.addressDelivery || !load?.cityDelivery) return;
 
     const now = Date.now();
@@ -192,7 +191,7 @@ export const Loads = () => {
     const service = new window.google.maps.DirectionsService();
     service.route(
       {
-        origin: { lat: Number(load.user.lat), lng: Number(load.user.lon) },
+        origin: { lat: Number(user.lat), lng: Number(user.lon) },
         destination: `${load.addressDelivery}, ${load.cityDelivery}`,
         travelMode: window.google.maps.TravelMode.DRIVING,
       },
@@ -207,28 +206,25 @@ export const Loads = () => {
         }
       }
     );
-  }, [selectedId, loads, isLoaded]);
+  }, [selectedId, allUsers, loads, isLoaded]);
 
-  const handleSelectLoad = (load) => {
-    if (selectedId === load._id) {
+  const handleSelectDriver = (user) => {
+    if (selectedId === user._id) {
       setSelectedId(null);
     } else {
-      setSelectedId(load._id);
-      if (mapRef.current && load.user?.lat != null) {
-        mapRef.current.panTo({
-          lat: Number(load.user.lat),
-          lng: Number(load.user.lon),
-        });
+      setSelectedId(user._id);
+      if (mapRef.current && user.lat != null) {
+        mapRef.current.panTo({ lat: Number(user.lat), lng: Number(user.lon) });
         mapRef.current.setZoom(16);
       }
     }
   };
 
-  const getUnitLabel = (load) => {
-    if (load.user?.unitNumber) return load.user.unitNumber;
-    if (load.user?.vehicle) return load.user.vehicle;
-    if (load.user?.name) return `${load.user.name} ${load.user.lastName || ""}`.trim();
-    return `Unit ${load._id?.slice(-6).toUpperCase()}`;
+  const getUnitLabel = (user) => {
+    if (user?.unitNumber) return user.unitNumber;
+    if (user?.vehicle) return user.vehicle;
+    if (user?.name) return `${user.name} ${user.lastName || ""}`.trim();
+    return "—";
   };
 
   /* ─── Edit Load Modal ─────────────────────────────── */
@@ -522,7 +518,7 @@ export const Loads = () => {
     );
   };
 
-  const selectedLoad = loads.find(l => l._id === selectedId);
+  const selectedDriverView = allDriversView.find(d => d.user._id === selectedId);
 
   if (!isLoaded) {
     return (
@@ -586,28 +582,27 @@ export const Loads = () => {
         {/* Count */}
         <div className="px-4 py-2 border-b">
           <span className="text-xs text-gray-400 font-medium">
-            {filteredLoads.length} {filteredLoads.length === 1 ? t("loads_count_one") : t("loads_count_many")}
+            {allDriversView.length} {allDriversView.length === 1 ? t("loads_count_one") : t("loads_count_many")}
             {selectedId && (
-              <button
-                onClick={() => setSelectedId(null)}
-                className="cursor-pointer ml-2 text-blue-500 hover:text-blue-700 underline"
-              >
+              <button onClick={() => setSelectedId(null)} className="cursor-pointer ml-2 text-blue-500 hover:text-blue-700 underline">
                 {t("loads_show_all")}
               </button>
             )}
           </span>
         </div>
 
-        {/* Driver list — compact by default, expanded when selected */}
+        {/* Driver list */}
         <div className="flex-1 overflow-y-auto">
-          {filteredLoads.length === 0 ? (
+          {allDriversView.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               <div className="text-3xl mb-2">📦</div>
               <p className="text-sm">{t("loads_no_loads")}</p>
             </div>
           ) : (
-            filteredLoads.map(load => {
-              const isSelected = selectedId === load._id;
+            allDriversView.map(({ user, load }) => {
+              const isSelected = selectedId === user._id;
+              const hasLoad = !!load;
+              const isMoving = load?.state === "on_the_way" || load?.state === "active";
               const fmt = (iso) => {
                 if (!iso) return "—";
                 const d = new Date(iso);
@@ -617,130 +612,110 @@ export const Loads = () => {
 
               return (
                 <div
-                  key={load._id}
-                  onClick={() => handleSelectLoad(load)}
+                  key={user._id}
+                  onClick={() => handleSelectDriver(user)}
                   className={`px-4 py-3 border-b cursor-pointer hover:bg-gray-50 transition-all select-none ${
-                    isSelected
-                      ? "bg-blue-50 border-l-[3px] border-l-blue-500"
-                      : "border-l-[3px] border-l-transparent"
+                    isSelected ? "bg-blue-50 border-l-[3px] border-l-blue-500" : "border-l-[3px] border-l-transparent"
                   }`}
                 >
-                  {/* ── Top row: unit label + speed + edit ── */}
+                  {/* Top row */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        load.state === "on_the_way" || load.state === "active" ? "bg-green-400" : "bg-gray-300"
-                      }`} />
-                      <span className="font-semibold text-sm text-gray-800 truncate">
-                        {getUnitLabel(load)}
-                      </span>
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isMoving ? "bg-green-400" : hasLoad ? "bg-gray-300" : "bg-gray-200"}`} />
+                      <span className="font-semibold text-sm text-gray-800 truncate">{getUnitLabel(user)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {load.user?.speed != null && (
-                        <span className="text-xs font-bold text-green-600">
-                          {toMph(load.user.speed)} MPH
-                        </span>
-                      )}
-                      {load.user?._id && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); copyTrackLink(load.user._id, t); }}
-                          className="flex items-center gap-1 p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
-                          title="Copy tracking link"
-                        >
-                          <Link size={13} />
-                          <span className="text-[11px] font-semibold">{t("loads_track")}</span>
-                        </button>
+                      {user.speed != null && (
+                        <span className="text-xs font-bold text-green-600">{toMph(user.speed)} MPH</span>
                       )}
                       <button
-                        onClick={(e) => { e.stopPropagation(); setEditLoad(load); }}
-                        className="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
-                        title="Edit load"
+                        onClick={(e) => { e.stopPropagation(); copyTrackLink(user._id, t); }}
+                        className="flex items-center gap-1 p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                        title="Copy tracking link"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z" />
-                        </svg>
+                        <Link size={13} />
+                        <span className="text-[11px] font-semibold">{t("loads_track")}</span>
                       </button>
+                      {hasLoad && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditLoad(load); }}
+                          className="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                          title="Edit load"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.172-8.172z" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* Status badge — always visible */}
+                  {/* Status / no-load badge */}
                   <div className="mt-1.5 ml-4">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${
-                      STATUS_COLORS[load.state] || "bg-gray-100 text-gray-600 border-gray-200"
-                    }`}>
-                      {STATUS_LABELS[load.state] || load.state}
-                    </span>
+                    {hasLoad ? (
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[load.state] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                        {STATUS_LABELS[load.state] || load.state}
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium border bg-gray-50 text-gray-400 border-gray-200 italic">
+                        {t("loads_no_active_load")}
+                      </span>
+                    )}
                   </div>
 
-                  {/* ── Expanded details (only when selected) ── */}
+                  {/* Expanded details */}
                   {isSelected && (
                     <div className="mt-2 ml-4 space-y-1.5">
+                      <p className="text-xs text-gray-400 truncate">{user.name} {user.lastName}</p>
 
-                      {/* Driver name */}
-                      {load.user && (
-                        <p className="text-xs text-gray-400 truncate">
-                          {load.user.name} {load.user.lastName}
-                        </p>
-                      )}
-
-                      {/* Pickup */}
-                      <div className="flex gap-1.5">
-                        <span className="text-[10px] mt-0.5">📍</span>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide leading-none mb-0.5">Pickup</p>
-                          <p className="text-xs text-gray-600 truncate font-medium">{load.companyNamePickUp}</p>
-                          <p className="text-[11px] text-gray-400 truncate">{load.addressPickup}, {load.cityPickUp}</p>
-                          <p className="text-[11px] text-gray-400">{fmt(load.datePickUp)}</p>
-                          {load.notePickUp && (
-                            <p className="text-[11px] text-blue-500 italic mt-0.5">{load.notePickUp}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Delivery */}
-                      <div className="flex gap-1.5">
-                        <span className="text-[10px] mt-0.5">🚚</span>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide leading-none mb-0.5">Delivery</p>
-                          <p className="text-xs text-gray-600 truncate font-medium">{load.companyDelivery}</p>
-                          <p className="text-[11px] text-gray-400 truncate">{load.addressDelivery}, {load.cityDelivery}</p>
-                          <p className="text-[11px] text-gray-400">{fmt(load.dateDelivery)}</p>
-                          {load.noteDelivery && (
-                            <p className="text-[11px] text-cyan-500 italic mt-0.5">{load.noteDelivery}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Rate */}
-                      {load.rate != null && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px]">💰</span>
-                          <span className="text-xs font-bold text-emerald-600">
-                            ${Number(load.rate).toLocaleString("en-US")}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* ETA to delivery */}
-                      {etaMap[load._id] && (
-                        etaMap[load._id] === "N/A" ? (
-                          <div className="flex items-center gap-1.5 bg-gray-50 rounded-md px-2 py-1 mt-0.5">
-                            <span className="text-[10px]">⚠️</span>
-                            <span className="text-[11px] text-gray-400 italic">
-                              {t("loads_eta_unavailable")}
-                            </span>
+                      {hasLoad ? (
+                        <>
+                          <div className="flex gap-1.5">
+                            <span className="text-[10px] mt-0.5">📍</span>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide leading-none mb-0.5">Pickup</p>
+                              <p className="text-xs text-gray-600 truncate font-medium">{load.companyNamePickUp}</p>
+                              <p className="text-[11px] text-gray-400 truncate">{load.addressPickup}, {load.cityPickUp}</p>
+                              <p className="text-[11px] text-gray-400">{fmt(load.datePickUp)}</p>
+                              {load.notePickUp && <p className="text-[11px] text-blue-500 italic mt-0.5">{load.notePickUp}</p>}
+                            </div>
                           </div>
-                        ) : (
-                          <div className="flex items-center gap-1.5 bg-blue-50 rounded-md px-2 py-1 mt-0.5">
-                            <span className="text-[10px]">⏱️</span>
-                            <span className="text-[11px] font-semibold text-blue-600">
-                              {t("loads_eta_label")}: <span className="font-bold">{etaMap[load._id]}</span>
-                            </span>
+                          <div className="flex gap-1.5">
+                            <span className="text-[10px] mt-0.5">🚚</span>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-wide leading-none mb-0.5">Delivery</p>
+                              <p className="text-xs text-gray-600 truncate font-medium">{load.companyDelivery}</p>
+                              <p className="text-[11px] text-gray-400 truncate">{load.addressDelivery}, {load.cityDelivery}</p>
+                              <p className="text-[11px] text-gray-400">{fmt(load.dateDelivery)}</p>
+                              {load.noteDelivery && <p className="text-[11px] text-cyan-500 italic mt-0.5">{load.noteDelivery}</p>}
+                            </div>
                           </div>
-                        )
+                          {load.rate != null && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px]">💰</span>
+                              <span className="text-xs font-bold text-emerald-600">${Number(load.rate).toLocaleString("en-US")}</span>
+                            </div>
+                          )}
+                          {etaMap[user._id] && (
+                            etaMap[user._id] === "N/A" ? (
+                              <div className="flex items-center gap-1.5 bg-gray-50 rounded-md px-2 py-1">
+                                <span className="text-[10px]">⚠️</span>
+                                <span className="text-[11px] text-gray-400 italic">{t("loads_eta_unavailable")}</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 bg-blue-50 rounded-md px-2 py-1">
+                                <span className="text-[10px]">⏱️</span>
+                                <span className="text-[11px] font-semibold text-blue-600">
+                                  {t("loads_eta_label")}: <span className="font-bold">{etaMap[user._id]}</span>
+                                </span>
+                              </div>
+                            )
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-xs text-gray-300 italic">{t("loads_no_active_load")}</p>
                       )}
-
                     </div>
                   )}
                 </div>
@@ -749,14 +724,12 @@ export const Loads = () => {
           )}
         </div>
 
-        {/* Selected detail footer */}
-        {selectedLoad && (
+        {/* Selected footer */}
+        {selectedDriverView && (
           <div className="border-t bg-blue-50 px-4 py-3 text-xs text-blue-700">
-            <p className="font-semibold truncate">{getUnitLabel(selectedLoad)}</p>
-            {selectedLoad.user?.lat && (
-              <p className="text-blue-500 mt-0.5">
-                {selectedLoad.speed ?? ''} Km/h
-              </p>
+            <p className="font-semibold truncate">{getUnitLabel(selectedDriverView.user)}</p>
+            {selectedDriverView.user?.lat && (
+              <p className="text-blue-500 mt-0.5">{toMph(selectedDriverView.user.speed ?? 0)} MPH</p>
             )}
           </div>
         )}
@@ -785,7 +758,7 @@ export const Loads = () => {
             const userLoad = loads.find(
               l => l.user?._id === user._id && l.state !== "completed"
             );
-            const isSelected = userLoad ? selectedId === userLoad._id : false;
+            const isSelected = selectedId === user._id;
             const unitLabel = user.unitNumber || user.vehicle || user.name || "—";
             const bg = isSelected ? "#2563eb" : "#1e293b";
 
@@ -796,8 +769,8 @@ export const Loads = () => {
                 mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
               >
                 <div
-                  onClick={() => userLoad && handleSelectLoad(userLoad)}
-                  className={`select-none inline-block ${userLoad ? "cursor-pointer" : "cursor-default"}`}
+                  onClick={() => handleSelectDriver(user)}
+                  className="select-none inline-block cursor-pointer"
                   style={{
                     transform: "translate(-50%, calc(-100% - 6px))",
                     filter: isSelected
@@ -816,7 +789,7 @@ export const Loads = () => {
                     whiteSpace: "nowrap",
                     letterSpacing: "0.02em",
                     fontFamily: "system-ui, sans-serif",
-                    opacity: userLoad ? 1 : 0.7,
+                    opacity: 1,
                     display: "flex",
                     alignItems: "center",
                     gap: "5px",
@@ -859,7 +832,7 @@ export const Loads = () => {
                     borderRight: "5px solid transparent",
                     borderTop: `6px solid ${bg}`,
                     margin: "0 auto",
-                    opacity: userLoad ? 1 : 0.7,
+                    opacity: 1,
                   }} />
                   {/* Pin dot */}
                   <div style={{
@@ -870,7 +843,7 @@ export const Loads = () => {
                     border: "2px solid white",
                     margin: "0 auto",
                     marginTop: "-1px",
-                    opacity: userLoad ? 1 : 0.7,
+                    opacity: 1,
                   }} />
                 </div>
               </OverlayView>
