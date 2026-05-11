@@ -244,6 +244,7 @@ const translations = {
     delete_driver_error: "Could not delete the driver",
 
     // ── ETA ───────────────────────────────────────────────
+    loads_no_active_load: "No active load",
     loads_eta_label: "ETA to delivery",
     loads_eta_unavailable: "Route not available",
     track_eta_label: "ETA to delivery",
@@ -500,6 +501,7 @@ const translations = {
     delete_driver_error: "No se pudo eliminar el conductor",
 
     // ── ETA ───────────────────────────────────────────────
+    loads_no_active_load: "Sin carga activa",
     loads_eta_label: "Tiempo estimado a destino",
     loads_eta_unavailable: "Ruta no disponible",
     track_eta_label: "Tiempo estimado a destino",
