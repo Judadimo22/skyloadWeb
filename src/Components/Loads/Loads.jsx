@@ -59,6 +59,7 @@ export const Loads = () => {
     picked_up: t("loads_status_picked_up"),
     on_the_way: t("loads_status_on_the_way"),
     delivered: t("loads_status_delivered"),
+    completed: t("loads_status_completed")
   };
 
   const [loads, setLoads] = useState([]);
