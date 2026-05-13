@@ -1,6 +1,6 @@
 import { useLanguage } from "../context/LanguageContext";
 
-export const LanguageSwitch = ({ mode = "dark" }) => {
+export const LanguageSwitch = ({ mode = "dark", compact = false }) => {
   const { lang, toggleLang } = useLanguage();
   const isEN = lang === "en";
   const isDark = mode === "dark";
@@ -9,7 +9,9 @@ export const LanguageSwitch = ({ mode = "dark" }) => {
     <button
       onClick={toggleLang}
       title={isEN ? "Cambiar a Español" : "Switch to English"}
-      className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg transition-all ${
+      className={`flex items-center gap-2 rounded-lg transition-all ${
+        compact ? "px-2 py-1" : "w-full px-3 py-2"
+      } ${
         isDark
           ? "text-slate-400 hover:bg-slate-800 hover:text-slate-100"
           : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
