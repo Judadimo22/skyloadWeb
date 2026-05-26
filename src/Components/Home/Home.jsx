@@ -41,7 +41,7 @@ export const Home = () => {
   const logout = () => {
     localStorage.removeItem("loginToken");
     localStorage.removeItem("roles");
-    navigate("/");
+    navigate("/login");
   };
 
   return (
