@@ -1,4 +1,5 @@
-import { Link } from "react-router";
+import { useEffect } from "react";
+import { Link, useLocation } from "react-router";
 import {
   MapPin, Truck, Users, BarChart3, Shield,
   ChevronRight, Zap, CheckCircle2,
@@ -10,6 +11,17 @@ import { useLanguage } from "../context/LanguageContext";
 
 export const SkyloadLandingPage = () => {
   const { t } = useLanguage();
+  const location = useLocation();
+
+  // Cuando venimos de una página legal con una sección destino, hacemos scroll tras el render
+  useEffect(() => {
+    const target = location.state?.scrollTo;
+    if (!target) return;
+    const id = setTimeout(() => {
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth" });
+    }, 80);
+    return () => clearTimeout(id);
+  }, [location.state]);
 
   const STATS = [
     { value: "500+", label: t("lp_stat_1") },

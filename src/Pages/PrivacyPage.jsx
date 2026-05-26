@@ -157,7 +157,7 @@ export const PrivacyPage = () => {
               <ShieldCheck size={20} className="text-blue-600 shrink-0 mt-0.5" />
               <p className="text-blue-800 text-sm leading-relaxed">
                 {c.intro}
-                <a href={`mailto:${EMAIL}`} className="underline font-medium">{EMAIL}</a>.
+                <a href={`mailto:${EMAIL}`} className="underline font-medium">{EMAIL}</a>
               </p>
             </div>
           </div>

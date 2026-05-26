@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./Components/ProtectedRoute";
 import { SkyloadLandingPage } from "./Pages/SkyloadLandingPage";
 import { TermsPage } from "./Pages/TermsPage";
 import { PrivacyPage } from "./Pages/PrivacyPage";
+import { ScrollToTop } from "./Components/ScrollToTop";
 
 // Motos marketplace
 import { MotosProvider } from "./motos/context/MotosContext";
@@ -25,7 +26,9 @@ import { AdminPage } from "./motos/pages/AdminPage";
 
 function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       {/* ── Public / landing routes ── */}
       <Route path="/" element={<SkyloadLandingPage />} />
       <Route path="/terminos" element={<TermsPage />} />
@@ -57,6 +60,7 @@ function App() {
         </MotosProvider>
       } />
     </Routes>
+    </>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { Menu, X } from "lucide-react";
 import { Logo } from "../Logo/Logo";
 import { LanguageSwitch } from "../LanguageSwitch";
@@ -8,16 +8,33 @@ import { useLanguage } from "../../context/LanguageContext";
 export const LandingNavBar = () => {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { t } = useLanguage();
 
   const isLegal = pathname === "/terminos" || pathname === "/privacidad";
 
   const NAV_LINKS = [
-    { label: t("lp_nav_home"),     to: "/#" },
-    { label: t("lp_nav_services"), to: "/#servicios" },
-    { label: t("lp_nav_features"), to: "/#plataformas" },
-    { label: t("lp_nav_contact"),  to: "/#contacto" },
+    { label: t("lp_nav_home"),     section: null },
+    { label: t("lp_nav_services"), section: "servicios" },
+    { label: t("lp_nav_features"), section: "plataformas" },
+    { label: t("lp_nav_contact"),  section: "contacto" },
   ];
+
+  const handleNavClick = (section) => {
+    setOpen(false);
+
+    if (pathname === "/") {
+      // Ya estamos en la landing — scroll directo
+      if (section) {
+        document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } else {
+      // Venimos de otra página — navegamos a "/" pasando la sección como estado
+      navigate("/", { state: { scrollTo: section } });
+    }
+  };
 
   return (
     <nav className="bg-slate-900 text-white sticky top-0 z-50 shadow-lg">
@@ -34,14 +51,17 @@ export const LandingNavBar = () => {
             </span>
           </Link>
 
-          {/* Desktop links */}
+          {/* Desktop links — solo en landing */}
           {!isLegal && (
             <div className="hidden md:flex items-center gap-7 text-sm font-medium">
-              {NAV_LINKS.map(({ label, to }) => (
-                <a key={label} href={to}
-                  className="text-slate-300 hover:text-white transition">
+              {NAV_LINKS.map(({ label, section }) => (
+                <button
+                  key={label}
+                  onClick={() => handleNavClick(section)}
+                  className="text-slate-300 hover:text-white transition"
+                >
                   {label}
-                </a>
+                </button>
               ))}
             </div>
           )}
@@ -68,11 +88,14 @@ export const LandingNavBar = () => {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden bg-slate-800 border-t border-slate-700 px-4 py-3 space-y-1">
-          {!isLegal && NAV_LINKS.map(({ label, to }) => (
-            <a key={label} href={to} onClick={() => setOpen(false)}
-              className="block py-2.5 text-sm text-slate-300 hover:text-white font-medium">
+          {NAV_LINKS.map(({ label, section }) => (
+            <button
+              key={label}
+              onClick={() => handleNavClick(section)}
+              className="block w-full text-left py-2.5 text-sm text-slate-300 hover:text-white font-medium"
+            >
               {label}
-            </a>
+            </button>
           ))}
           <div className="pt-2 border-t border-slate-700 space-y-2">
             <div className="py-1">
