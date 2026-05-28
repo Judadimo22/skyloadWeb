@@ -5,7 +5,7 @@ import { FileText, ChevronRight } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
 const LAST_UPDATED = "May 26, 2026";
-const EMAIL = "info@fleetpoint360.co";
+const EMAIL = "info@fleetpoint360.com";
 const COMPANY = "Fleet Point 360";
 
 const CONTENT = {

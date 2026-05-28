@@ -5,7 +5,7 @@ import { ShieldCheck, ChevronRight, Lock, Eye, UserCheck, Bell, Trash2, Mail } f
 import { useLanguage } from "../context/LanguageContext";
 
 const LAST_UPDATED = "May 26, 2026";
-const EMAIL   = "info@fleetpoint360.co";
+const EMAIL   = "info@fleetpoint360.com";
 const COMPANY = "Fleet Point 360";
 
 const ICONS = [Eye, UserCheck, Lock, ShieldCheck, UserCheck, Bell, Trash2, Mail];

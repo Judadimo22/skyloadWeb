@@ -60,7 +60,7 @@ export const LandingFooter = () => {
             <ul className="space-y-2.5 text-sm">
               <li className="flex items-center gap-2.5">
                 <Mail size={13} className="text-blue-400 shrink-0" />
-                info@fleetpoint360.co
+                info@fleetpoint360.com
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone size={13} className="text-blue-400 shrink-0" />

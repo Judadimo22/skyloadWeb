@@ -215,8 +215,8 @@ export const SkyloadLandingPage = () => {
                   </div>
                   <div>
                     <p className="text-slate-500 text-xs">{t("lp_contact_email_label")}</p>
-                    <a href="mailto:info@fleetpoint360.co" className="hover:text-blue-400 transition">
-                      info@fleetpoint360.co
+                    <a href="mailto:info@fleetpoint360.com" className="hover:text-blue-400 transition">
+                      info@fleetpoint360.com
                     </a>
                   </div>
                 </div>
