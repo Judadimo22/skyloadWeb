@@ -692,7 +692,7 @@ export const Loads = () => {
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isMoving ? "bg-green-400" : hasLoad ? "bg-gray-300" : "bg-gray-200"}`} />
                       <span className="font-semibold text-sm text-gray-800 truncate">{getUnitLabel(user)}</span>
                       {(() => {
-                        const ago = timeAgo(user.locationUpdatedAt);
+                        const ago = timeAgo(user.locationUpdatedAt || user.updatedAt);
                         if (!ago) return null;
                         return (
                           <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${ago === "Online" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>

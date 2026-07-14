@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { LogOut, Map, Users, Search, ShieldCheck } from "lucide-react";
+import { LogOut, Map, Package, Users, Search, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UsersList } from "../Users/Users";
 import { Loads } from "../Loads/Loads";
+import { LoadsTable } from "../Loads/LoadsTable";
 import { AdminsPanel } from "../Admins/Admins";
 import { Logo } from "../Logo/Logo";
 import { LanguageSwitch } from "../LanguageSwitch";
@@ -33,8 +34,9 @@ export const Home = () => {
   const isSuperAdmin = SUPERADMIN_EMAILS.includes(currentEmail);
 
   const NAV_ITEMS = [
-    { id: "cargas",   label: t("nav_live_map"), icon: Map   },
-    { id: "usuarios", label: t("nav_drivers"),  icon: Users },
+    { id: "cargas",       label: t("nav_live_map"), icon: Map     },
+    { id: "loads_table",  label: "Loads",           icon: Package },
+    { id: "usuarios",     label: t("nav_drivers"),  icon: Users   },
     ...(isSuperAdmin ? [{ id: "admins", label: t("nav_admins"), icon: ShieldCheck }] : []),
   ];
 
@@ -122,6 +124,12 @@ export const Home = () => {
 
         <main className="flex-1 overflow-hidden">
           <Loads />
+        </main>
+
+      ) : section === "loads_table" ? (
+
+        <main className="flex-1 overflow-hidden flex flex-col">
+          <LoadsTable />
         </main>
 
       ) : section === "admins" && isSuperAdmin ? (
