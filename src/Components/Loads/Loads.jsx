@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { backendBaseUrl } from "../../utils/funciones";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import Swal from "sweetalert2";
-import { Link, X } from "lucide-react";
+import { Link, Pencil, Trash2, X } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
 const copyTrackLink = (userId, t) => {
@@ -70,8 +70,6 @@ export const Loads = () => {
   const mapRef = useRef(null);
   const hasFitOnce = useRef(false);
   const [editLoad, setEditLoad] = useState(null);
-  const [etaMap, setEtaMap] = useState({});
-  const etaLastCalc = useRef({});
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -160,54 +158,12 @@ export const Loads = () => {
     mapRef.current = map;
   };
 
-  // Fit all drivers when nothing selected
+  // Fit all drivers exactly once — on first data load. Never again automatically.
   useEffect(() => {
-    if (!mapRef.current || selectedId) return;
-    if (usersWithLocation.length > 0) {
-      fitAll(mapRef.current, usersWithLocation);
-    }
-  }, [loads, allUsers, filter, selectedId]);
-
-  // Follow selected driver in real-time (selectedId is now user._id)
-  useEffect(() => {
-    if (!mapRef.current || !selectedId) return;
-    const driver = allUsers.find(u => u._id === selectedId);
-    if (!driver?.lat) return;
-    mapRef.current.panTo({ lat: Number(driver.lat), lng: Number(driver.lon) });
-  }, [allUsers]);
-
-  // ETA to delivery — recalculate at most every 30 seconds for the selected driver's load
-  useEffect(() => {
-    if (!isLoaded || !selectedId || !window.google) return;
-    const driverView = allDriversView.find(d => d.user._id === selectedId);
-    if (!driverView?.load) return;
-    const { user, load } = driverView;
-    if (!user?.lat || !user?.lon) return;
-    if (!load?.addressDelivery || !load?.cityDelivery) return;
-
-    const now = Date.now();
-    if (now - (etaLastCalc.current[selectedId] || 0) < 30000) return;
-    etaLastCalc.current[selectedId] = now;
-
-    const service = new window.google.maps.DirectionsService();
-    service.route(
-      {
-        origin: { lat: Number(user.lat), lng: Number(user.lon) },
-        destination: `${load.addressDelivery}, ${load.cityDelivery}`,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK") {
-          const secs = result.routes[0]?.legs[0]?.duration?.value || 0;
-          const h = Math.floor(secs / 3600);
-          const m = Math.floor((secs % 3600) / 60);
-          setEtaMap(prev => ({ ...prev, [selectedId]: h > 0 ? `${h}h ${m}m` : `${m}m` }));
-        } else {
-          setEtaMap(prev => ({ ...prev, [selectedId]: "N/A" }));
-        }
-      }
-    );
-  }, [selectedId, allUsers, loads, isLoaded]);
+    if (!mapRef.current || hasFitOnce.current || usersWithLocation.length === 0) return;
+    fitAll(mapRef.current, usersWithLocation);
+    hasFitOnce.current = true;
+  }, [usersWithLocation]);
 
   const handleSelectDriver = (user) => {
     if (selectedId === user._id) {
@@ -226,6 +182,52 @@ export const Loads = () => {
     if (user?.vehicle) return user.vehicle;
     if (user?.name) return `${user.name} ${user.lastName || ""}`.trim();
     return "—";
+  };
+
+  const timeAgo = (dateStr) => {
+    if (!dateStr) return null;
+    const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    if (secs < 300) return "Online";
+    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+    if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+    return `${Math.floor(secs / 86400)}d ago`;
+  };
+
+  // Flat list of every completed load — one row per load (multiple per driver)
+  const completedLoadsFlat = filter === "completed"
+    ? loads
+        .filter(l => l.state === "completed")
+        .filter(l => {
+          const unit = (l.user?.unitNumber || "").toString().toLowerCase();
+          return unitSearch === "" || unit.includes(unitSearch.toLowerCase());
+        })
+        .map(l => ({ user: allUsers.find(u => u._id === l.user?._id) || l.user, load: l }))
+        .sort((a, b) => new Date(b.load.updatedAt || 0) - new Date(a.load.updatedAt || 0))
+    : null;
+
+  const handleDeleteLoad = async (load) => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Delete this load?",
+      text: "This will permanently remove it from history.",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+    });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`${backendBaseUrl}/deleteLoad/${load._id}`, { method: "PUT" });
+      if (res.ok) {
+        getLoads();
+        Swal.fire({ icon: "success", title: "Load deleted", timer: 1500, showConfirmButton: false });
+      } else {
+        Swal.fire({ icon: "error", title: t("common_error"), text: "Could not delete the load.", confirmButtonColor: "#2563eb" });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: t("common_server_error"), text: t("common_try_again"), confirmButtonColor: "#2563eb" });
+    }
   };
 
   /* ─── Edit Load Modal ─────────────────────────────── */
@@ -315,27 +317,31 @@ export const Loads = () => {
     };
 
     const handleCancelLoad = async () => {
+      const isCompleted = load.state === "completed";
       const result = await Swal.fire({
         icon: "warning",
-        title: t("edit_load_cancel_title"),
-        text: t("edit_load_cancel_text"),
+        title: isCompleted ? "Delete this load?" : t("edit_load_cancel_title"),
+        text: isCompleted
+          ? "This will permanently remove it from history."
+          : t("edit_load_cancel_text"),
         showCancelButton: true,
-        confirmButtonText: t("edit_load_cancel_yes"),
-        cancelButtonText: t("edit_load_cancel_no"),
+        confirmButtonText: isCompleted ? "Delete" : t("edit_load_cancel_yes"),
+        cancelButtonText: isCompleted ? "Cancel" : t("edit_load_cancel_no"),
         confirmButtonColor: "#dc2626",
         cancelButtonColor: "#6b7280",
       });
       if (!result.isConfirmed) return;
       try {
-        const response = await fetch(`${backendBaseUrl}/load/${load._id}`, {
-          method: "DELETE",
-        });
+        const url = isCompleted
+          ? `${backendBaseUrl}/deleteLoad/${load._id}`
+          : `${backendBaseUrl}/cancelLoad/${load._id}`;
+        const response = await fetch(url, { method: "PUT" });
         if (response.ok) {
           onClose();
           Swal.fire({
             icon: "success",
-            title: t("edit_load_cancel_success_title"),
-            text: t("edit_load_cancel_success_text"),
+            title: isCompleted ? "Load deleted" : t("edit_load_cancel_success_title"),
+            text: isCompleted ? "The load has been removed from history." : t("edit_load_cancel_success_text"),
             confirmButtonColor: "#2563eb",
           }).then(() => window.location.reload());
         } else {
@@ -492,7 +498,7 @@ export const Loads = () => {
                 onClick={handleCancelLoad}
                 className="px-5 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-semibold hover:bg-red-100 transition"
               >
-                {t("edit_load_cancel_btn")}
+                {load.state === "completed" ? "Delete load" : t("edit_load_cancel_btn")}
               </button>
               <div className="flex gap-3">
                 <button
@@ -583,8 +589,11 @@ export const Loads = () => {
         {/* Count */}
         <div className="px-4 py-2 border-b">
           <span className="text-xs text-gray-400 font-medium">
-            {allDriversView.length} {allDriversView.length === 1 ? t("loads_count_one") : t("loads_count_many")}
-            {selectedId && (
+            {filter === "completed"
+              ? `${completedLoadsFlat?.length ?? 0} completed load${completedLoadsFlat?.length === 1 ? "" : "s"}`
+              : `${allDriversView.length} ${allDriversView.length === 1 ? t("loads_count_one") : t("loads_count_many")}`
+            }
+            {selectedId && filter !== "completed" && (
               <button onClick={() => setSelectedId(null)} className="cursor-pointer ml-2 text-blue-500 hover:text-blue-700 underline">
                 {t("loads_show_all")}
               </button>
@@ -592,9 +601,67 @@ export const Loads = () => {
           </span>
         </div>
 
-        {/* Driver list */}
+        {/* Driver / completed-loads list */}
         <div className="flex-1 overflow-y-auto">
-          {allDriversView.length === 0 ? (
+
+          {/* ── Completed loads: flat list, one row per load ── */}
+          {filter === "completed" ? (
+            completedLoadsFlat.length === 0 ? (
+              <div className="p-8 text-center text-gray-400">
+                <div className="text-3xl mb-2">✅</div>
+                <p className="text-sm">No completed loads</p>
+              </div>
+            ) : (
+              completedLoadsFlat.map(({ user, load }) => {
+                const fmt = (iso) => {
+                  if (!iso) return "—";
+                  const d = new Date(iso);
+                  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                };
+                return (
+                  <div key={load._id} className="px-4 py-3 border-b hover:bg-gray-50 transition-all">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="font-semibold text-sm text-gray-800">{getUnitLabel(user)}</span>
+                        <p className="text-xs text-gray-400 truncate">{user?.name} {user?.lastName}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => setEditLoad(load)}
+                          className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition"
+                          title="Edit load"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLoad(load)}
+                          className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                          title="Delete load"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                      <span className="truncate">{load.cityPickUp}</span>
+                      <span className="text-gray-300 flex-shrink-0">→</span>
+                      <span className="truncate">{load.cityDelivery}</span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      {load.rate != null && (
+                        <span className="text-xs font-bold text-emerald-600">${Number(load.rate).toLocaleString("en-US")}</span>
+                      )}
+                      <span className="text-[10px] text-gray-300">{fmt(load.updatedAt)}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )
+
+          ) : (
+
+          /* ── Active / in-progress drivers list ── */
+          allDriversView.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               <div className="text-3xl mb-2">📦</div>
               <p className="text-sm">{t("loads_no_loads")}</p>
@@ -624,6 +691,15 @@ export const Loads = () => {
                     <div className="flex items-center gap-2 min-w-0">
                       <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isMoving ? "bg-green-400" : hasLoad ? "bg-gray-300" : "bg-gray-200"}`} />
                       <span className="font-semibold text-sm text-gray-800 truncate">{getUnitLabel(user)}</span>
+                      {(() => {
+                        const ago = timeAgo(user.locationUpdatedAt);
+                        if (!ago) return null;
+                        return (
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${ago === "Online" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-400"}`}>
+                            {ago}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {user.speed != null && (
@@ -698,21 +774,6 @@ export const Loads = () => {
                               <span className="text-xs font-bold text-emerald-600">${Number(load.rate).toLocaleString("en-US")}</span>
                             </div>
                           )}
-                          {etaMap[user._id] && (
-                            etaMap[user._id] === "N/A" ? (
-                              <div className="flex items-center gap-1.5 bg-gray-50 rounded-md px-2 py-1">
-                                <span className="text-[10px]">⚠️</span>
-                                <span className="text-[11px] text-gray-400 italic">{t("loads_eta_unavailable")}</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1.5 bg-blue-50 rounded-md px-2 py-1">
-                                <span className="text-[10px]">⏱️</span>
-                                <span className="text-[11px] font-semibold text-blue-600">
-                                  {t("loads_eta_label")}: <span className="font-bold">{etaMap[user._id]}</span>
-                                </span>
-                              </div>
-                            )
-                          )}
                         </>
                       ) : (
                         <p className="text-xs text-gray-300 italic">{t("loads_no_active_load")}</p>
@@ -722,10 +783,14 @@ export const Loads = () => {
                 </div>
               );
             })
+          )
+
+          /* closes the active-drivers else branch */
           )}
+
         </div>
 
-        {/* Selected footer */}
+        {/* Selected footer — only shown for active/in-progress drivers */}
         {selectedDriverView && (
           <div className="border-t bg-blue-50 px-4 py-3 text-xs text-blue-700">
             <p className="font-semibold truncate">{getUnitLabel(selectedDriverView.user)}</p>
@@ -746,6 +811,18 @@ export const Loads = () => {
 
       {/* MAP */}
       <div className="flex-1 relative">
+        {/* Fit-All button — lets operator re-center after manually zooming in on a driver */}
+        {usersWithLocation.length > 0 && (
+          <button
+            onClick={() => { if (mapRef.current) fitAll(mapRef.current, usersWithLocation); }}
+            className="absolute top-3 right-3 z-10 bg-white border border-gray-200 shadow-sm rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition flex items-center gap-1.5"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            Fit All
+          </button>
+        )}
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={DEFAULT_CENTER}

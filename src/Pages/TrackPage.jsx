@@ -30,11 +30,10 @@ export const TrackPage = () => {
   const { t } = useLanguage();
   const [driver, setDriver] = useState(null);
   const [activeLoad, setActiveLoad] = useState(null);
-  const [eta, setEta] = useState(null);
   const [notFound, setNotFound] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const mapRef = useRef(null);
   const hasCentered = useRef(false);
-  const etaLastCalc = useRef(0);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -47,7 +46,7 @@ export const TrackPage = () => {
       const usersRes = await fetch(`${backendBaseUrl}/users`);
       const users = await usersRes.json();
       const found = users.find((u) => u._id === driverId);
-      if (!found) { setNotFound(true); return; }
+      if (!found) { setNotFound(true); setDataLoaded(true); return; }
       setDriver(found);
 
       // Fetch loads to find this driver's latest non-completed load
@@ -57,6 +56,7 @@ export const TrackPage = () => {
         .filter(l => l.user?._id === driverId && l.state !== "completed")
         .sort((a, b) => (b._id > a._id ? 1 : -1));
       setActiveLoad(driverLoads[0] || null);
+      setDataLoaded(true);
     } catch {
       // silently retry
     }
@@ -82,35 +82,18 @@ export const TrackPage = () => {
     mapRef.current.panTo({ lat: Number(driver.lat), lng: Number(driver.lon) });
   }, [driver?.lat, driver?.lon]);
 
-  // ETA calculation — recalculate at most every 30 seconds
-  useEffect(() => {
-    if (!isLoaded || !window.google) return;
-    if (!driver?.lat || !driver?.lon) return;
-    if (!activeLoad?.addressDelivery || !activeLoad?.cityDelivery) return;
 
-    const now = Date.now();
-    if (now - etaLastCalc.current < 30000) return;
-    etaLastCalc.current = now;
-
-    const service = new window.google.maps.DirectionsService();
-    service.route(
-      {
-        origin: { lat: Number(driver.lat), lng: Number(driver.lon) },
-        destination: `${activeLoad.addressDelivery}, ${activeLoad.cityDelivery}`,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK") {
-          const secs = result.routes[0]?.legs[0]?.duration?.value || 0;
-          const h = Math.floor(secs / 3600);
-          const m = Math.floor((secs % 3600) / 60);
-          setEta(h > 0 ? `${h}h ${m}m` : `${m}m`);
-        } else {
-          setEta("N/A");
-        }
-      }
+  if (driver && driver.trackingEnabled === false) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="text-5xl mb-4">🛌</div>
+          <h1 className="text-xl font-bold text-gray-700 mb-2">{t("track_resting_title") || "Driver is resting"}</h1>
+          <p className="text-sm text-gray-400">{t("track_resting_text") || "Tracking is currently disabled for this driver."}</p>
+        </div>
+      </div>
     );
-  }, [driver?.lat, driver?.lon, activeLoad, isLoaded]);
+  }
 
   if (notFound) {
     return (
@@ -119,6 +102,18 @@ export const TrackPage = () => {
           <div className="text-5xl mb-4">🔍</div>
           <h1 className="text-xl font-bold text-gray-700 mb-2">{t("track_not_found_title")}</h1>
           <p className="text-sm text-gray-400">{t("track_not_found_text")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (dataLoaded && driver && !activeLoad) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-xl font-bold text-gray-700 mb-2">Tracking link expired</h1>
+          <p className="text-sm text-gray-400">This load has been completed. Tracking is no longer available.</p>
         </div>
       </div>
     );
@@ -160,18 +155,6 @@ export const TrackPage = () => {
                     t("track_waiting")
                   )}
                 </p>
-                {/* ETA badge */}
-                {eta && activeLoad && (
-                  eta === "N/A" ? (
-                    <span className="inline-flex items-center gap-1 bg-gray-100 border border-gray-200 text-gray-400 text-xs italic px-2 py-0.5 rounded-full">
-                      ⚠️ {t("track_eta_unavailable")}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-600 text-xs font-semibold px-2 py-0.5 rounded-full">
-                      ⏱️ {t("track_eta_label")}: <span className="font-bold">{eta}</span>
-                    </span>
-                  )
-                )}
                 {/* Delivery destination */}
                 {activeLoad?.cityDelivery && (
                   <span className="text-xs text-gray-400 truncate hidden sm:block">
@@ -233,11 +216,6 @@ export const TrackPage = () => {
                     {driver.speed != null && (
                       <span style={{ marginLeft: "6px", fontWeight: "400", opacity: 0.85 }}>
                         {toMph(driver.speed)} MPH
-                      </span>
-                    )}
-                    {eta && eta !== "N/A" && (
-                      <span style={{ marginLeft: "6px", fontWeight: "400", opacity: 0.85 }}>
-                        · ⏱️ {eta}
                       </span>
                     )}
                   </div>
