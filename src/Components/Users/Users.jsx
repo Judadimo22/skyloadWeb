@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Link, Mail, Pencil, Trash2, Truck, User, UserPlus, X, Info, Radio, RadioOff } from "lucide-react";
+import { Eye, EyeOff, Link, Mail, Pencil, Trash2, Truck, User, UserPlus, X, Info, Radio } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUsers } from "../../redux/actions/adminActions";
 import { registerUser } from "../../redux/actions/usersActions";
@@ -806,7 +806,7 @@ export const UsersList = ({ unitFilter = "" }) => {
                         className={`p-1.5 rounded-lg transition border ${user.trackingEnabled !== false ? "bg-green-50 text-green-600 hover:bg-green-100 border-green-100" : "bg-gray-50 text-gray-400 hover:bg-gray-100 border-gray-200"}`}
                         title={user.trackingEnabled !== false ? "Disable tracking" : "Enable tracking"}
                       >
-                        {user.trackingEnabled !== false ? <Radio size={14} /> : <RadioOff size={14} />}
+                        <Radio size={14} />
                       </button>
                       {/* Delete */}
                       <button
