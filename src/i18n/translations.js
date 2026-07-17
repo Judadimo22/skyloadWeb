@@ -255,6 +255,12 @@ const translations = {
     link_copied_title: "Link copied!",
     link_copied_text: "Share this link to track the driver's live location.",
 
+    // ── Copy coordinates toast ────────────────────────────
+    coords_copied_title: "Coordinates copied!",
+    coords_copied_text: "GPS coordinates have been copied to clipboard.",
+    drivers_copy_coords: "Copy coordinates",
+    drivers_no_coords: "No location data available",
+
     // ── Landing page ──────────────────────────────────────
     lp_nav_home: "Home",
     lp_nav_services: "Services",
@@ -902,6 +908,12 @@ const translations = {
     // ── Toast copiar enlace ───────────────────────────────
     link_copied_title: "¡Enlace copiado!",
     link_copied_text: "Comparte este enlace para rastrear la ubicación del conductor.",
+
+    // ── Toast copiar coordenadas ──────────────────────────
+    coords_copied_title: "¡Coordenadas copiadas!",
+    coords_copied_text: "Las coordenadas GPS fueron copiadas al portapapeles.",
+    drivers_copy_coords: "Copiar coordenadas",
+    drivers_no_coords: "Sin datos de ubicación",
 
     // ── Landing page ──────────────────────────────────────
     lp_nav_home: "Inicio",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Link, Mail, Pencil, Trash2, Truck, User, UserPlus, X, Info, Radio } from "lucide-react";
+import { Eye, EyeOff, Link, Mail, MapPin, Pencil, Trash2, Truck, User, UserPlus, X, Info, Radio } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUsers } from "../../redux/actions/adminActions";
 import { registerUser } from "../../redux/actions/usersActions";
@@ -783,6 +783,31 @@ export const UsersList = ({ unitFilter = "" }) => {
                       >
                         <Link size={12} />
                         {t("drivers_track")}
+                      </button>
+                      {/* Copy Coordinates */}
+                      <button
+                        onClick={() => {
+                          if (!user.lat || !user.lon) return;
+                          navigator.clipboard.writeText(`${user.lat}, ${user.lon}`).then(() => {
+                            Swal.fire({
+                              icon: "success",
+                              title: t("coords_copied_title"),
+                              text: t("coords_copied_text"),
+                              confirmButtonColor: "#2563eb",
+                              timer: 2000,
+                              showConfirmButton: false,
+                            });
+                          });
+                        }}
+                        disabled={!user.lat || !user.lon}
+                        className={`p-1.5 rounded-lg transition border ${
+                          user.lat && user.lon
+                            ? "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-100"
+                            : "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                        }`}
+                        title={user.lat && user.lon ? t("drivers_copy_coords") : t("drivers_no_coords")}
+                      >
+                        <MapPin size={14} />
                       </button>
                       {/* View */}
                       <button
