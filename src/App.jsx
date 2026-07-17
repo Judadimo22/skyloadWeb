@@ -6,6 +6,10 @@ import { HomePage } from "./Pages/HomePage";
 import { RegisterUserPage } from "./Pages/RegisterUserPage";
 import { TrackPage } from "./Pages/TrackPage";
 import { ProtectedRoute } from "./Components/ProtectedRoute";
+import { SkyloadLandingPage } from "./Pages/SkyloadLandingPage";
+import { TermsPage } from "./Pages/TermsPage";
+import { PrivacyPage } from "./Pages/PrivacyPage";
+import { ScrollToTop } from "./Components/ScrollToTop";
 
 // Motos marketplace
 import { MotosProvider } from "./motos/context/MotosContext";
@@ -22,9 +26,16 @@ import { AdminPage } from "./motos/pages/AdminPage";
 
 function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
+      {/* ── Public / landing routes ── */}
+      <Route path="/" element={<SkyloadLandingPage />} />
+      <Route path="/terminos" element={<TermsPage />} />
+      <Route path="/privacidad" element={<PrivacyPage />} />
+
       {/* ── Fleet routes ── */}
-      <Route path="/" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
       <Route path="/registerUser" element={<ProtectedRoute><RegisterUserPage /></ProtectedRoute>} />
       <Route path="/track/:driverId" element={<TrackPage />} />
@@ -49,6 +60,7 @@ function App() {
         </MotosProvider>
       } />
     </Routes>
+    </>
   );
 }
 

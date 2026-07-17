@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Link, Mail, Pencil, Trash2, Truck, User, UserPlus, X, Info } from "lucide-react";
+import { Eye, EyeOff, Link, Mail, MapPin, Pencil, Trash2, Truck, User, UserPlus, X, Info, Radio } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUsers } from "../../redux/actions/adminActions";
 import { registerUser } from "../../redux/actions/usersActions";
@@ -409,7 +409,7 @@ const EditDriverModal = ({ user, onClose, onSuccess }) => {
         vehicleDimension: form.vehicleDimension,
         unitNumber: form.unitNumber,
       };
-      if (form.newPassword) body.password = form.newPassword;
+      if (form.newPassword) body.newPassword = form.newPassword;
 
       const res = await fetch(`${backendBaseUrl}/user/${user._id}`, {
         method: "PUT",
@@ -648,6 +648,20 @@ export const UsersList = ({ unitFilter = "" }) => {
     fetchData();
   }, [dispatch]);
 
+  const handleToggleTracking = async (user) => {
+    const newValue = !(user.trackingEnabled !== false);
+    try {
+      const res = await fetch(`${backendBaseUrl}/user/${user._id}/tracking`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackingEnabled: newValue }),
+      });
+      if (res.ok) dispatch(getUsers());
+    } catch {
+      Swal.fire({ icon: "error", title: t("common_server_error"), text: t("common_try_again"), confirmButtonColor: "#2563eb" });
+    }
+  };
+
   const handleDelete = async (user) => {
     const result = await Swal.fire({
       icon: "warning",
@@ -770,6 +784,31 @@ export const UsersList = ({ unitFilter = "" }) => {
                         <Link size={12} />
                         {t("drivers_track")}
                       </button>
+                      {/* Copy Coordinates */}
+                      <button
+                        onClick={() => {
+                          if (!user.lat || !user.lon) return;
+                          navigator.clipboard.writeText(`${user.lat}, ${user.lon}`).then(() => {
+                            Swal.fire({
+                              icon: "success",
+                              title: t("coords_copied_title"),
+                              text: t("coords_copied_text"),
+                              confirmButtonColor: "#2563eb",
+                              timer: 2000,
+                              showConfirmButton: false,
+                            });
+                          });
+                        }}
+                        disabled={!user.lat || !user.lon}
+                        className={`p-1.5 rounded-lg transition border ${
+                          user.lat && user.lon
+                            ? "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-100"
+                            : "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                        }`}
+                        title={user.lat && user.lon ? t("drivers_copy_coords") : t("drivers_no_coords")}
+                      >
+                        <MapPin size={14} />
+                      </button>
                       {/* View */}
                       <button
                         onClick={() => setViewDriver(user)}
@@ -785,6 +824,14 @@ export const UsersList = ({ unitFilter = "" }) => {
                         title={t("edit_driver_title")}
                       >
                         <Pencil size={14} />
+                      </button>
+                      {/* Tracking toggle */}
+                      <button
+                        onClick={() => handleToggleTracking(user)}
+                        className={`p-1.5 rounded-lg transition border ${user.trackingEnabled !== false ? "bg-green-50 text-green-600 hover:bg-green-100 border-green-100" : "bg-gray-50 text-gray-400 hover:bg-gray-100 border-gray-200"}`}
+                        title={user.trackingEnabled !== false ? "Disable tracking" : "Enable tracking"}
+                      >
+                        <Radio size={14} />
                       </button>
                       {/* Delete */}
                       <button
