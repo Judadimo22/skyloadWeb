@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { backendBaseUrl } from "../../utils/funciones";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import Swal from "sweetalert2";
-import { Link, Pencil, Trash2, X } from "lucide-react";
+import { Link, MapPin, Pencil, Trash2, X } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
 const copyTrackLink = (userId, t) => {
@@ -14,6 +14,19 @@ const copyTrackLink = (userId, t) => {
       text: t("link_copied_text"),
       confirmButtonColor: "#2563eb",
       timer: 2500,
+      showConfirmButton: false,
+    });
+  });
+};
+
+const copyCoords = (lat, lon, t) => {
+  navigator.clipboard.writeText(`${lat}, ${lon}`).then(() => {
+    Swal.fire({
+      icon: "success",
+      title: t("coords_copied_title"),
+      text: t("coords_copied_text"),
+      confirmButtonColor: "#2563eb",
+      timer: 2000,
       showConfirmButton: false,
     });
   });
@@ -713,6 +726,15 @@ export const Loads = () => {
                         <Link size={13} />
                         <span className="text-[11px] font-semibold">{t("loads_track")}</span>
                       </button>
+                      {user.lat != null && user.lon != null && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); copyCoords(user.lat, user.lon, t); }}
+                          className="p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                          title={t("drivers_copy_coords")}
+                        >
+                          <MapPin size={13} />
+                        </button>
+                      )}
                       {hasLoad && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditLoad(load); }}
