@@ -726,16 +726,6 @@ export const Loads = () => {
                         <Link size={13} />
                         <span className="text-[11px] font-semibold">{t("loads_track")}</span>
                       </button>
-                      {user.lat != null && user.lon != null && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); copyCoords(user.lat, user.lon, t); }}
-                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition text-[11px] font-semibold"
-                          title={`${user.lat}, ${user.lon}`}
-                        >
-                          <MapPin size={11} />
-                          GPS
-                        </button>
-                      )}
                       {hasLoad && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditLoad(load); }}
@@ -751,8 +741,8 @@ export const Loads = () => {
                     </div>
                   </div>
 
-                  {/* Status / no-load badge */}
-                  <div className="mt-1.5 ml-4">
+                  {/* Status / no-load badge + GPS coords */}
+                  <div className="mt-1.5 ml-4 flex items-center gap-2 flex-wrap">
                     {hasLoad ? (
                       <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[load.state] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
                         {STATUS_LABELS[load.state] || load.state}
@@ -761,6 +751,16 @@ export const Loads = () => {
                       <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium border bg-gray-50 text-gray-400 border-gray-200 italic">
                         {t("loads_no_active_load")}
                       </span>
+                    )}
+                    {user.lat != null && user.lon != null && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); copyCoords(user.lat, user.lon, t); }}
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition text-[10px] font-semibold"
+                        title={t("drivers_copy_coords")}
+                      >
+                        <MapPin size={10} />
+                        {Number(user.lat).toFixed(3)}, {Number(user.lon).toFixed(3)}
+                      </button>
                     )}
                   </div>
 
