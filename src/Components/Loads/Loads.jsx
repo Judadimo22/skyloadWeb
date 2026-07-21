@@ -729,10 +729,11 @@ export const Loads = () => {
                       {user.lat != null && user.lon != null && (
                         <button
                           onClick={(e) => { e.stopPropagation(); copyCoords(user.lat, user.lon, t); }}
-                          className="p-1 rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
-                          title={t("drivers_copy_coords")}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200 hover:bg-indigo-100 transition text-[11px] font-semibold"
+                          title={`${user.lat}, ${user.lon}`}
                         >
-                          <MapPin size={13} />
+                          <MapPin size={11} />
+                          GPS
                         </button>
                       )}
                       {hasLoad && (
